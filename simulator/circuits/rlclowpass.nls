@@ -1,0 +1,6 @@
+RESISTOR res1 0 1 1k
+INDUCTOR ind1 1 2 10u
+CAPACITOR cap1 2 3 1m
+VOLTAGE_IN vin 0 3 waves/square20.txt
+VOLTAGE_OUT vout 2 3
+GROUND 3
