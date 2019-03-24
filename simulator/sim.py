@@ -6,6 +6,8 @@ from netlist import Netlist
 import sys
 from utils import plot
 import matplotlib.pyplot as plt
+from scipy.io import wavfile
+import numpy as np
 
 def main():
 	"""
@@ -16,6 +18,7 @@ def main():
 	# set up argument parser
 	parser = ArgumentParser()
 	parser.add_argument('-c', help='Circuit netlist file', required=True)
+	parser.add_argument('-o', help='Output .wav file', default=None)
 
 	try:
 		# extract command line arguments
@@ -26,6 +29,13 @@ def main():
 		# solve the circuit at every timestamp for the input signal
 		timescale, input_signal, vout = circuit.transient()
 		t_start, t_end = circuit.timescale()
+
+		# write data to output wavfile
+		outfile = args.o
+		if outfile is not None:
+			rate = timescale[1] - timescale[0]
+			fs = 1.0 / rate
+			wavfile.write(outfile, rate, np.array(vout))
 
 		# plot the results
 		plt.subplot(1, 2, 1)
