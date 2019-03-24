@@ -1,5 +1,6 @@
 import itertools
 import numpy as np
+import sys
 
 class Component(object):
     """
@@ -287,10 +288,10 @@ class VoltageIn(Component):
         tokens = line.split()
         self.node_pos = tokens[2]
         self.node_neg = tokens[3]
-        self.input_file = tokens[4]
-        f = open(self.input_file, 'r')
-        meta = next(f).split(",")
-        self.sampling_period, self.t_start, self.t_end = map(float, meta)
+        self.input_file = sys.stdin
+        meta = next(self.input_file).split(",")
+        self.sampling_period = float(meta[0])
+        self.t_start = 0
 
     def __repr__(self):
         """
@@ -311,12 +312,11 @@ class VoltageIn(Component):
         return self.sampling_period
 
     def __iter__(self):
-        with open(self.input_file, 'r') as f:
-            next(f)
-            data = map(self.process_input_line, f)
-            for time, voltage in data:
-                self.V = voltage
-                yield (time, voltage)
+        data = map(self.process_input_line, sys.stdin)
+        for time, voltage in data:
+            self.V = voltage
+            self.t_end = time
+            yield (time, voltage)
 
 
     def get_nodes(self):
