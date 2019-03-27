@@ -350,13 +350,16 @@ schematic = (function() {
 
     Schematic.prototype.add_component = function(new_c) {
         this.components.push(new_c);
+        new_c.incIndex();
 
         // create undoable edit record here
     }
 
     Schematic.prototype.remove_component = function(c) {
         var index = this.components.indexOf(c);
-        if (index != -1) this.components.splice(index,1);
+        if (index != -1) {
+            this.components.splice(index,1);
+        }
     }
 
     Schematic.prototype.find_connections = function(cp) {
@@ -2113,6 +2116,14 @@ schematic = (function() {
     Component.prototype.display_current = function(c,vmap) {
     }
 
+    Component.index = 0;
+
+    Component.prototype.incIndex = function() {
+        // does nothing. only used by subclasses
+        return;
+
+    }
+
     ////////////////////////////////////////////////////////////////////////////////
     //
     //  Connection point
@@ -2434,7 +2445,7 @@ schematic = (function() {
 
     function Resistor(x,y,rotation,name = 'r' ,r) {
         Component.call(this,'r',x,y,rotation);
-        this.properties['name'] = name;
+        this.properties['name'] = name + Resistor.index;
         this.properties['r'] = r ? r : '1';
         this.add_connection(0,0);
         this.add_connection(0,48);
@@ -2443,6 +2454,12 @@ schematic = (function() {
     }
     Resistor.prototype = new Component();
     Resistor.prototype.constructor = Resistor;
+
+    Resistor.index = 0;
+
+    Resistor.prototype.incIndex = function() {
+        Resistor.index = Resistor.index + 1;
+    }
 
     Resistor.prototype.toString = function() {
         return '<Resistor '+this.properties['r']+' ('+this.x+','+this.y+')>';
@@ -2466,7 +2483,7 @@ schematic = (function() {
     }
 
     Resistor.prototype.clone = function(x,y) {
-        return new Resistor(x,y,this.rotation,this.properties['name'],this.properties['r']);
+        return new Resistor(x,y,this.rotation,'r',this.properties['r']);
     }
 
     Resistor.prototype.json_netlist = function(index) {
@@ -2485,7 +2502,7 @@ schematic = (function() {
 
     function Capacitor(x,y,rotation,name = 'c',c) {
         Component.call(this,'c',x,y,rotation);
-        this.properties['name'] = name;
+        this.properties['name'] = name + Capacitor.index;
         this.properties['c'] = c ? c : '1p';
         this.add_connection(0,0);
         this.add_connection(0,48);
@@ -2495,6 +2512,11 @@ schematic = (function() {
     Capacitor.prototype = new Component();
     Capacitor.prototype.constructor = Capacitor;
 
+    Capacitor.index = 0;
+
+    Capacitor.prototype.incIndex = function() {
+        Capacitor.index = Capacitor.index + 1;
+    }
     Capacitor.prototype.toString = function() {
         return '<Capacitor '+this.properties['r']+' ('+this.x+','+this.y+')>';
     }
@@ -2512,7 +2534,7 @@ schematic = (function() {
     }
 
     Capacitor.prototype.clone = function(x,y) {
-        return new Capacitor(x,y,this.rotation,this.properties['name'],this.properties['c']);
+        return new Capacitor(x,y,this.rotation,'c',this.properties['c']);
     }
 
     Capacitor.prototype.json_netlist = function(index) {
@@ -2534,7 +2556,7 @@ schematic = (function() {
 
     function Inductor(x,y,rotation,name = 'i',l) {
         Component.call(this,'l',x,y,rotation);
-        this.properties['name'] = name;
+        this.properties['name'] = name + Inductor.index;
         this.properties['l'] = l ? l : '1n';
         this.add_connection(0,0);
         this.add_connection(0,48);
@@ -2543,6 +2565,12 @@ schematic = (function() {
     }
     Inductor.prototype = new Component();
     Inductor.prototype.constructor = Inductor;
+
+    Inductor.index = 0;
+
+    Inductor.prototype.incIndex = function() {
+        Inductor.index = Inductor.index + 1;
+    }
 
     Inductor.prototype.toString = function() {
         return '<Inductor '+this.properties['l']+' ('+this.x+','+this.y+')>';
@@ -2563,7 +2591,7 @@ schematic = (function() {
     }
 
     Inductor.prototype.clone = function(x,y) {
-        return new Inductor(x,y,this.rotation,this.properties['name'],this.properties['l']);
+        return new Inductor(x,y,this.rotation,'i',this.properties['l']);
     }
 
     Inductor.prototype.json_netlist = function(index) {
@@ -2682,7 +2710,7 @@ schematic = (function() {
 
     function Diode(x,y,rotation,name,area) {
         Component.call(this,'d',x,y,rotation);
-        this.properties['name'] = name;
+        this.properties['name'] = name + Diode.index;
         this.properties['area'] = area ? area : '1';
         this.add_connection(0,0);   // anode
         this.add_connection(0,48);  // cathode
@@ -2691,6 +2719,12 @@ schematic = (function() {
     }
     Diode.prototype = new Component();
     Diode.prototype.constructor = Diode;
+
+    Diode.index = 0;
+
+    Diode.prototype.incIndex = function() {
+        Diode.index = Diode.index + 1;
+    }
 
     Diode.prototype.toString = function() {
         return '<Diode '+this.properties['area']+' ('+this.x+','+this.y+')>';
@@ -2712,7 +2746,7 @@ schematic = (function() {
     }
 
     Diode.prototype.clone = function(x,y) {
-        return new Diode(x,y,this.rotation,this.properties['name'],this.properties['area']);
+        return new Diode(x,y,this.rotation,'d',this.properties['area']);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -2723,7 +2757,7 @@ schematic = (function() {
 
     function NFet(x,y,rotation,name,w_over_l) {
         Component.call(this,'n',x,y,rotation);
-        this.properties['name'] = name;
+        this.properties['name'] = name + NFet.index;
         this.properties['W/L'] = w_over_l ? w_over_l : '2';
         this.add_connection(0,0);   // drain
         this.add_connection(-24,24);  // gate
@@ -2733,6 +2767,13 @@ schematic = (function() {
     }
     NFet.prototype = new Component();
     NFet.prototype.constructor = NFet;
+
+    NFet.index = 0;
+
+    NFet.prototype.incIndex = function() {
+        NFet.index = NFet.index + 1;
+    }
+
 
     NFet.prototype.toString = function() {
         return '<NFet '+this.properties['W/L']+' ('+this.x+','+this.y+')>';
@@ -2758,7 +2799,7 @@ schematic = (function() {
     }
 
     NFet.prototype.clone = function(x,y) {
-        return new NFet(x,y,this.rotation,this.properties['name'],this.properties['W/L']);
+        return new NFet(x,y,this.rotation,'n',this.properties['W/L']);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -2767,9 +2808,9 @@ schematic = (function() {
     //
     ////////////////////////////////////////////////////////////////////////////////
 
-    function PFet(x,y,rotation,name,w_over_l) {
+    function PFet(x,y,rotation,name = 'p',w_over_l) {
         Component.call(this,'p',x,y,rotation);
-        this.properties['name'] = name;
+        this.properties['name'] = name + PFet.index;
         this.properties['W/L'] = w_over_l ? w_over_l : '2';
         this.add_connection(0,0);   // drain
         this.add_connection(-24,24);  // gate
@@ -2779,6 +2820,12 @@ schematic = (function() {
     }
     PFet.prototype = new Component();
     PFet.prototype.constructor = PFet;
+
+    PFet.index = 0;
+
+    PFet.prototype.incIndex = function() {
+        PFet.index = PFet.index + 1;
+    }
 
     PFet.prototype.toString = function() {
         return '<PFet '+this.properties['W/L']+' ('+this.x+','+this.y+')>';
@@ -2806,7 +2853,7 @@ schematic = (function() {
     }
 
     PFet.prototype.clone = function(x,y) {
-        return new PFet(x,y,this.rotation,this.properties['name'],this.properties['W/L']);
+        return new PFet(x,y,this.rotation,'p',this.properties['W/L']);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -2879,6 +2926,12 @@ schematic = (function() {
     }
     Source.prototype = new Component();
     Source.prototype.constructor = Source;
+
+    Source.index = 0;
+
+    Source.prototype.incIndex = function() {
+        Source.index = Source.index + 1;
+    }
 
     Source.prototype.toString = function() {
         return '<'+this.type+'source '+this.properties['params']+' ('+this.x+','+this.y+')>';
@@ -3063,6 +3116,13 @@ schematic = (function() {
     VSource.prototype.build_content = Source.prototype.build_content;
     VSource.prototype.edit_properties = Source.prototype.edit_properties;
 
+    VSource.index = 0;
+
+    VSource.prototype.incIndex = function() {
+        VSource.index = VSource.index + 1;
+    }
+
+
     // display current for DC analysis
     VSource.prototype.display_current = function(c,vmap) {
         var name = this.properties['name'];
@@ -3112,48 +3172,17 @@ schematic = (function() {
     ISource.prototype.build_content = Source.prototype.build_content;
     ISource.prototype.edit_properties = Source.prototype.edit_properties;
 
+    ISource.index = 0;
+
+    ISource.prototype.incIndex = function() {
+        ISource.index = ISource.index + 1;
+    }
+
+
     ISource.prototype.clone = function(x,y) {
         return new ISource(x,y,this.rotation,this.properties['name'],this.properties['value']);
     }
 
-/*
-    ///////////////////////////////////////////////////////////////////////////////
-    //
-    //  JQuery slider support for setting a component value
-    //
-    ///////////////////////////////////////////////////////////////////////////////
-
-    function component_slider(event,ui) {
-        var sname = $(this).slider("option","schematic");
-
-        // set value of specified component
-        var cname = $(this).slider("option","component");
-        var pname = $(this).slider("option","property");
-        var suffix = $(this).slider("option","suffix");
-        if (typeof suffix != "string") suffix = "";
-
-        var v = ui.value;
-        $(this).slider("value",v);  // move slider's indicator
-
-        var choices = $(this).slider("option","choices");
-        if (choices instanceof Array) v = choices[v];
-
-        // selector may match several schematics
-        $("." + sname).each(function(index,element) {
-            element.schematic.set_property(cname,pname,v.toString() + suffix);
-        })
-
-        // perform requested analysis
-        var analysis = $(this).slider("option","analysis");
-        if (analysis == "dc")
-        $("." + sname).each(function(index,element) {
-            element.schematic.dc_analysis();
-            })
-
-        return false;
-    }
-
-*/
     ///////////////////////////////////////////////////////////////////////////////
     //
     //  Module definition
@@ -3162,7 +3191,6 @@ schematic = (function() {
 
     var module = {
         'Schematic': Schematic,
-        // 'component_slider': component_slider,
     }
     return module;
     }());
