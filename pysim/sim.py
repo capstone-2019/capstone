@@ -8,6 +8,9 @@ from utils import plot
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
 import numpy as np
+import sounddevice as sd
+
+TARGET_AMPLITUDE = 80
 
 def main():
 	"""
@@ -28,14 +31,18 @@ def main():
 
 		# solve the circuit at every timestamp for the input signal
 		timescale, input_signal, vout = circuit.transient()
+		vout = np.array(vout)
 		t_start, t_end = circuit.timescale()
 
 		# write data to output wavfile
 		outfile = args.o
 		if outfile is not None:
 			rate = timescale[1] - timescale[0]
-			fs = 1.0 / rate
-			wavfile.write(outfile, rate, np.array(vout))
+			fs = int(1.0 / rate)
+			max_amp = np.max(np.abs(vout))
+			sigf32 = (vout/max_amp).astype(np.float32)
+			sd.play(sigf32, fs*100)
+			# wavfile.write(outfile, fs, sigf32)
 
 		# plot the results
 		plt.subplot(1, 2, 1)
