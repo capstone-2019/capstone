@@ -18,6 +18,7 @@
 #include <components/component.hpp>
 #include <stdio.h>
 #include <getopt.h>
+#include <circuit.hpp>
 
 using std::cout;
 using std::cerr;
@@ -113,5 +114,6 @@ void parse_command_line(int argc, char *argv[], simparams_t *params) {
 int main(int argc, char *argv[]) {
     simparams_t params;
     parse_command_line(argc, argv, &params);
+    NetlistParser parser(params.circuit_file);
     return 0;
 }

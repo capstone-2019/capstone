@@ -1,3 +1,4 @@
 # Compilation artifacts
 csim
 *.o
+doc/
