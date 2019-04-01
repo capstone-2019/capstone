@@ -20,6 +20,12 @@
 #include <circuit.hpp>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <Eigen/Dense>
+#include <Eigen/LU>
+
+using Eigen::MatrixXd;
+using Eigen::Upper;
+using Eigen::Lower;
 
 using std::cout;
 using std::cerr;
@@ -183,6 +189,25 @@ int main(int argc, char *argv[]) {
 
     parse_command_line(argc, argv, &params);
     NetlistParser parser(params.circuit_file);
+
+
+
+
+    MatrixXd A(2, 2);
+    A(0, 0) = 2;
+    A(0, 1) = 1;
+    A(1, 0) = 1;
+    A(1, 1) = 3;
+
+    MatrixXd B(2, 1);
+    B(0) = 17;
+    B(1) = 26;
+
+    MatrixXd x = A.colPivHouseholderQr().solve(B);
+    cout << "A = " << endl << A << endl << endl;
+    cout << "B = " << endl << B << endl << endl;
+    cout << "x = " << endl << x << endl << endl;
+
 
     /* launch the plotting script if the user requested it */
     if (params.plot)
