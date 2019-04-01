@@ -21,6 +21,7 @@
 #include <string>
 #include <fstream>
 #include <components/component.hpp>
+#include <circuit.hpp>
 
 /****************************************************************************
  *                             NetlistIterator                              *
@@ -81,7 +82,9 @@ public:
     std::vector<Component*> get_components();
 private:
     std::vector<Component*> components;
-    static Component *component_from_tokens(std::vector<std::string>& tokens);
+    Component *component_from_tokens(std::vector<std::string>& tokens);
+    int ground_id;
+    Circuit c;
 };
 
 #endif /* _NETPARSER_H_ */

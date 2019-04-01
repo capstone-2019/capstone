@@ -15,6 +15,7 @@
 #include <ctype.h>
 #include <string>
 #include <components/component.hpp>
+#include <sstream>
 
 using std::string;
 
@@ -74,4 +75,16 @@ double Component::parse_by_unit(const string& value) {
 	string unit = value.substr(unit_index, len);
 	double unit_scale = get_unit_scale(unit);
 	return base * unit_scale;
+}
+
+string Component::unknown_voltage(int node_id) {
+	std::ostringstream sstream;
+	sstream << "unknown_voltage_" << node_id;
+	return sstream.str();
+}
+
+string Component::unknown_current(const string& name) {
+	std::ostringstream sstream;
+	sstream << "unknown_current_" << name;
+	return sstream.str();
 }

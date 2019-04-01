@@ -144,7 +144,12 @@ NetlistParser::NetlistParser(const char *netfile) {
     for (auto it = ni.begin(); it != ni.end(); it++) {
         const string& line = *it;
         vector<string> tokens = tokenize(line);
-        components.push_back(component_from_tokens(tokens));
+        if (tokens[0] == "GROUND") {
+            ground_id = stoi(tokens[1]);
+        }
+        else {
+            components.push_back(component_from_tokens(tokens));
+        }
     }
 }
 
@@ -170,14 +175,31 @@ NetlistParser::~NetlistParser() {
  * @bug Should use smart pointers.
  */
 Component *NetlistParser::component_from_tokens(vector<string> &tokens) {
-    if (tokens[0] == Resistor::IDENTIFIER)
-        return new Resistor(tokens);
-    else if (tokens[0] == Capacitor::IDENTIFIER)
-        return new Capacitor(tokens);
-    else if (tokens[0] == VoltageIn::IDENTIFIER)
-        return new VoltageIn(tokens);
-    else if (tokens[0] == VoltageOut::IDENTIFIER)
-        return new VoltageOut(tokens);
-    else
+    if (tokens[0] == Resistor::IDENTIFIER) {
+        Resistor *res = new Resistor(tokens);
+        c.register_resistor(res);
+        return res;
+    }
+    else if (tokens[0] == Capacitor::IDENTIFIER) {
+        Capacitor *cap = new Capacitor(tokens);
+        c.register_capacitor(cap);
+        return cap;
+    }
+    else if (tokens[0] == VoltageIn::IDENTIFIER) {
+        VoltageIn *vin = new VoltageIn(tokens);
+        c.register_vin(vin);
+        return vin;
+    }
+    else if (tokens[0] == VoltageOut::IDENTIFIER) {
+        VoltageOut *vout = new VoltageOut(tokens);
+        c.register_vout(vout);
+        return vout;
+    }
+    else if (tokens[0] == "GROUND") {
+        c.register_ground(stoi(tokens[1]));
         return NULL;
+    } else {
+        std::cerr << "Unrecognized token " << tokens[0] << std::endl;
+        return NULL;
+    }
 }

@@ -25,3 +25,11 @@ string VoltageIn::to_string() {
 	           << "'";
 	return vin_string.str();
 }
+
+vector<string> VoltageIn::unknowns() {
+	vector<string> unknown_variables = {
+		unknown_voltage(npos),
+		unknown_current("vin")
+	};
+	return unknown_variables;
+}

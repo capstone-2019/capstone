@@ -11,7 +11,6 @@ Resistor::Resistor(const vector<string>& tokens) {
 	npos = stoi(tokens[2]);
 	nneg = stoi(tokens[3]);
 	resistance = parse_by_unit(tokens[4]);
-	std::cout << *this << std::endl;
 }
 
 string Resistor::to_string() {
@@ -24,4 +23,11 @@ string Resistor::to_string() {
 	                << resistance
 	                << " Ohms";
 	return resistor_string.str();
+}
+
+vector<string> Resistor::unknowns() {
+	vector<string> unknown_variables;
+	unknown_variables.push_back(unknown_voltage(npos));
+	unknown_variables.push_back(unknown_voltage(nneg));
+	return unknown_variables;
 }

@@ -16,6 +16,7 @@
 
 #include <string>
 #include <iostream>
+#include <vector>
 
 class Component
 {
@@ -37,6 +38,14 @@ public:
 	virtual std::string to_string() { return "Unspecified Component"; }
 
 	/**
+	 * @brief Gets the list of unknowns for a component.
+	 *
+	 * @bug Should be overriden in all derived classes and ultimately made
+	 * pure virtual.
+	 */
+	virtual std::vector<std::string> unknowns() { return {}; }
+
+	/**
 	 * @brief Writes the string representation of a component to a stream.
 	 *
 	 * @param out The stream the component should be written to.
@@ -53,6 +62,9 @@ protected:
 	/* Given a string like "15k" converts it into an appropraite double
 	 * (i.e. 15k -> 15000.0) */
 	double parse_by_unit(const std::string& value);
+
+	std::string unknown_voltage(int node_id);
+	std::string unknown_current(const std::string& name);
 
 private:
 	/* maps supported unit types to scale factors */

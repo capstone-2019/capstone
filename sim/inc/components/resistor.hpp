@@ -13,6 +13,7 @@ public:
 	~Resistor() { }
 
 	std::string to_string() override;
+	std::vector<std::string> unknowns() override;
 
 private:
 	int npos;

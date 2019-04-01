@@ -11,7 +11,10 @@ public:
 
 	VoltageIn(const std::vector<std::string>& tokens);
 	~VoltageIn() { }
+
 	std::string to_string() override;
+	std::vector<std::string> unknowns() override;
+
 private:
 	int npos;
 	int nneg;
