@@ -20,8 +20,6 @@
 #include <circuit.hpp>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <Eigen/Dense>
-#include <Eigen/LU>
 
 using Eigen::MatrixXd;
 using Eigen::Upper;

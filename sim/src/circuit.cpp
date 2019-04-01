@@ -4,6 +4,8 @@
 
 using std::vector;
 using std::string;
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
 
 void Circuit::register_unknowns(const vector<string>& new_unknown_variables) {
 	for (const auto& unknown : new_unknown_variables) {
