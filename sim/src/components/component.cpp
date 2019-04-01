@@ -7,8 +7,6 @@
  * @brief This file contains functions that are common to all component
  * types.
  *
- * @bug No known bugs.
- *
  * @author Matthew Kasper (mkasper@andrew.cmu.edu)
  *
  */

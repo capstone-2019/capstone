@@ -7,8 +7,6 @@
  * @brief Defines the base component type from which all other component types
  * are derived from.
  *
- * @bug No known bugs.
- *
  * @author Matthew Kasper (mkasper@andrew.cmu.edu)
  *
  */

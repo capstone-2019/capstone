@@ -10,8 +10,6 @@
  * The NetlistParser class can be used to go from a netlist file to the
  * simulator's internal circuit representation.
  *
- * @bug No known bugs.
- *
  * @author Matthew Kasper (mkasper@andrew.cmu.edu)
  *
  */

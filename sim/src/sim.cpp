@@ -7,8 +7,6 @@
  * @brief This file contains the top-level main routine driving the circuit
  * simulator.
  *
- * @bug No known bugs.
- *
  * @author Matthew Kasper (mkasper@andrew.cmu.edu)
  *
  */
