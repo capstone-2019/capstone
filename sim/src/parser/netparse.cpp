@@ -159,9 +159,9 @@ NetlistParser::NetlistParser(const char *netfile) {
  * @bug Should use smart pointers.
  */
 NetlistParser::~NetlistParser() {
-    for (Component *c : components) {
-        delete c;
-    }
+    // for (Component *c : components) {
+    //     delete c;
+    // }
 }
 
 /**
@@ -187,6 +187,10 @@ Component *NetlistParser::component_from_tokens(vector<string> &tokens) {
     }
     else if (tokens[0] == VoltageIn::IDENTIFIER) {
         VoltageIn *vin = new VoltageIn(tokens);
+        double voltage;
+        while (vin->next_voltage(&voltage)) {
+            std::cout << "HERE: " << voltage << std::endl;
+        }
         c.register_vin(vin);
         return vin;
     }

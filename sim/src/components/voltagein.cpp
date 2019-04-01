@@ -7,8 +7,6 @@
 #include <errors.hpp>
 #include <stdio.h>
 
-#define DBG printf("%s:%d\n", __FUNCTION__, __LINE__);
-
 using std::vector;
 using std::string;
 using Eigen::VectorXd;
@@ -28,44 +26,24 @@ VoltageIn::VoltageIn(const vector<string>& tokens) {
 	/* parse line by line */
 	while (getline(sigstream, line)) {
 
-		DBG;
-
 		std::istringstream iss(line);
 		double voltage;
-
-		DBG;
 
 		/* first line contains sampling period, rest contain voltages */
 		if (iter == 0 && !(iss >> sample_period))
 			sim_error("Could not read sampling period from signal file");
 
-
-		DBG;
-
-		if (iter > 0 && !(iss >> voltage))
-			sim_error("Could not read voltage on line %d: [%s]",
-				iter+1, line.c_str());
-
-		DBG;
-
-		// if (iter == 0)
-		// 	std::cout << "Detected sampling period: " << sample_period
-		//               << std::endl;
-		// else if (iter > 0)
-		// 	std::cout << "Got voltage: " << voltage << " V" << std::endl;
+		else if (iter > 0 && !(iss >> voltage))
+			sim_error("Bad voltage on line %d - %s", iter+1, line.c_str());
 
 		/* record the voltage */
-		if (iter > 0) {
-			DBG;
+		if (iter > 0)
 			voltages.push_back(voltage);
-		}
-
-		DBG;
 
 		iter++;
-
-		DBG;
 	}
+
+	vit = voltages.begin();
 }
 
 string VoltageIn::to_string() {
@@ -89,7 +67,12 @@ vector<string> VoltageIn::unknowns() {
 }
 
 bool VoltageIn::next_voltage(double *V) {
-	return false;
+	if (vit == voltages.end())
+		return false;
+
+	*V = *vit;
+	vit++;
+	return true;
 }
 
 void VoltageIn::add_contribution(LinearSystem& sys, Eigen::VectorXd prev_soln,

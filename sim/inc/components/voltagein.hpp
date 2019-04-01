@@ -55,10 +55,10 @@ private:
 	int nneg;                  /**< negative terminal */
 	std::string signal_file;   /**< which file the signal is read from */
 
-	int vindex;                    /**< index into voltages vector */
-	std::vector<double> voltages;  /**< the voltage in signal */
-	double V;                      /**< current voltage */
-	double sample_period;          /**< signal's samping period */
+	std::vector<double> voltages;       /**< the voltage in signal */
+	std::vector<double>::iterator vit;  /**< iterator over voltages */
+	double V;                           /**< current voltage */
+	double sample_period;               /**< signal's samping period */
 };
 
 #endif /* _VOLTAGE_IN_H_ */
