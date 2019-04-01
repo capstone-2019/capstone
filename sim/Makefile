@@ -4,8 +4,8 @@ TARGET = csim
 # the C++ compiler to use
 CC = g++
 
-SRC_DIRS = src         # where source files are located
-INC_DIRS = inc eigen   # header files to add to include path
+SRC_DIRS = src             # where source files are located
+INC_DIRS = inc inc/eigen   # header files to add to include path
 
 # generate the set of object files to produce
 SRC = $(shell find $(SRC_DIRS) -name *.cpp)

@@ -82,7 +82,7 @@ static int launch_plotter() {
 	 */
 	static char *plotter_args[] = {
 		(char *) "python",
-		(char *) "plot.py",
+		(char *) "scripts/plot.py",
 		(char *) "-f",
 		(char *) "sin",
 		(char *) "--plot",
