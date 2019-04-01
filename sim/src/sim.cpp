@@ -42,6 +42,15 @@ typedef struct {
 	bool plot;                 /**< Whether to plot the output signal */
 } simparams_t;
 
+typedef struct {
+	FILE *fp;
+	int pid;
+} plotter_t;
+
+static int plotter_fd[2];
+#define PIPE_SIDE_READ 0
+#define PIPE_SIDE_WRITE 1
+
 /**
  * @brief Arbitrary integer code used for getopt to indicate that the
  * plotting mode has been chose
@@ -80,23 +89,47 @@ static int launch_plotter() {
 	 */
 	static char *plotter_args[] = {
 		(char *) "python",
-		(char *) "scripts/plot.py",
+		(char *) "scripts/iotest.py",
 		(char *) "-f",
 		(char *) "sin",
 		(char *) "--plot",
 	};
+
+	if (pipe(plotter_fd) < 0)
+		sim_error("Failed to setup pipe with plotter process.");
 
 	/* run plotter in child process */
 	int pid = fork();
 
 	/* child process runs plotter script, parent reaps child */
 	if (pid == 0) {
+
+		/* no need for the write fd in child process */
+		if (close(plotter_fd[PIPE_SIDE_WRITE]) < 0)
+			sim_error("Failed to close pipe's write fd in child process.");
+
+		/* redirect IO in child such that stdin maps to a temp file
+		 * used to pass data between simulator and plotter */
+		if (dup2(plotter_fd[PIPE_SIDE_READ], STDIN_FILENO) < 0)
+			sim_error("Failed to redirect IO in child process");
+
+		/* we can use STDIN_FILENO now, so we can close the read descriptor */
+		if (close(plotter_fd[PIPE_SIDE_READ]) < 0)
+			sim_error("Failed to close pipe's read fd in child process");
+
+		/* run the plotter */
 		execvp(plotter_args[0], plotter_args);
-		sim_error("Failed to run plotting script.");
+
+		/* SHOULD NEVER REACH HERE! */
+		sim_error("%s:%d - execvp() failed!", __FUNCTION__, __LINE__);
+
 	}
 	else if (pid < 0) {
 		sim_error("Failed to fork() plotting script.");
 	}
+
+	if (close(plotter_fd[PIPE_SIDE_READ]) < 0)
+		sim_error("Failed to close pipe's read fd in parent process");
 
 	return pid;
 }
@@ -183,6 +216,7 @@ void parse_command_line(int argc, char *argv[], simparams_t *params) {
  */
 int main(int argc, char *argv[]) {
     simparams_t params;
+    plotter_t plotter;
     int plotter_pid;
 
     parse_command_line(argc, argv, &params);
@@ -192,9 +226,24 @@ int main(int argc, char *argv[]) {
     if (params.plot)
     	plotter_pid = launch_plotter();
 
-    /* wait for the plotting script to complete */
-    if (params.plot)
+    /* Pass data into plotting script, wait for plotter to complete */
+    if (params.plot) {
+
+    	/**
+    	 * Send a message to the child process.
+    	 *
+    	 * @bug Delete this later and replace with the real contents.
+    	 */
+    	dprintf(plotter_fd[PIPE_SIDE_WRITE], "Hello from the parent!\n");
+    	dprintf(plotter_fd[PIPE_SIDE_WRITE], "Second message from parent!\n");
+
+    	/* close the write side of the PIPE, child should see EOF now */
+    	if (close(plotter_fd[PIPE_SIDE_WRITE]) < 0)
+    		sim_error("Failed to close pipe's read fd in parent process.");
+
+    	/* wait for child to exit */
     	waitpid(plotter_pid, NULL, 0);
+    }
 
     return 0;
 }
