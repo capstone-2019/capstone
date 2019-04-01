@@ -74,17 +74,23 @@ private:
  *                              NetlistParser                               *
  ****************************************************************************/
 
+/**
+ * @brief Class containing the functionality to parse netlists.
+ */
 class NetlistParser
 {
 public:
+    /* Create a netlist parser */
     NetlistParser(const char *netfile);
+    /* Destroy a netlist parser */
     ~NetlistParser();
+    /* Get a vector of the circuit components in the netlist */
     std::vector<Component*> get_components();
 private:
-    std::vector<Component*> components;
     Component *component_from_tokens(std::vector<std::string>& tokens);
-    int ground_id;
-    Circuit c;
+    std::vector<Component*> components;  /**< List of components in circuit*/
+    int ground_id;                       /**< ID of ground node */
+    Circuit c;                           /**< Internal circuit representation */
 };
 
 #endif /* _NETPARSER_H_ */

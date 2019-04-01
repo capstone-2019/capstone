@@ -42,22 +42,21 @@ typedef struct {
 	bool plot;                 /**< Whether to plot the output signal */
 } simparams_t;
 
-typedef struct {
-	FILE *fp;
-	int pid;
-} plotter_t;
-
+/**
+ * @brief File descriptors for pipe used to communicate with plotting
+ * script if plotting is enabled.
+ */
 static int plotter_fd[2];
-#define PIPE_SIDE_READ 0
-#define PIPE_SIDE_WRITE 1
+#define PIPE_SIDE_READ 0    /**< Index of read descriptor for the pipe */
+#define PIPE_SIDE_WRITE 1   /**< Index of write descriptor for the pipe */
 
 /**
  * @brief Arbitrary integer code used for getopt to indicate that the
  * plotting mode has been chose
  */
-#define ENABLE_PLOTTING 0xFF
+#define ENABLE_PLOTTING 0xff
 
-static void sim_error(const char *fmt, ...) {
+void sim_error(const char *fmt, ...) {
 	va_list vl;
 	va_start(vl, fmt);
 	fprintf(stderr, "[FATAL SIMULATOR ERROR]: ");
@@ -89,7 +88,7 @@ static int launch_plotter() {
 	 */
 	static char *plotter_args[] = {
 		(char *) "python",
-		(char *) "scripts/iotest.py",
+		(char *) "scripts/plot.py",
 		(char *) "-f",
 		(char *) "sin",
 		(char *) "--plot",
@@ -216,7 +215,6 @@ void parse_command_line(int argc, char *argv[], simparams_t *params) {
  */
 int main(int argc, char *argv[]) {
     simparams_t params;
-    plotter_t plotter;
     int plotter_pid;
 
     parse_command_line(argc, argv, &params);

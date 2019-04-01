@@ -63,7 +63,9 @@ protected:
 	 * (i.e. 15k -> 15000.0) */
 	double parse_by_unit(const std::string& value);
 
+	/* Creates a label for an unknown node voltage */
 	std::string unknown_voltage(int node_id);
+	/* Creates a label for an unknown branch current */
 	std::string unknown_current(const std::string& name);
 
 private:

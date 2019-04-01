@@ -1,3 +1,18 @@
+/**
+ *
+ * @file circuit.hpp
+ *
+ * @date April 1, 2019
+ *
+ * @brief This file contains the interface to the circuit module, which is
+ * used to drive the simulation.
+ *
+ * @author Matthew Kasper (mkasper@andrew.cmu.edu)
+ *
+ * @bug The way unknowns are tracked is pretty inefficient.
+ *
+ */
+
 #ifndef _CIRCUIT_H_
 #define _CIRCUIT_H_
 
@@ -5,6 +20,10 @@
 #include <unordered_map>
 #include <vector>
 
+/**
+ * @brief Circuit class that is used as the primary driver of
+ * the simulation.
+ */
 class Circuit
 {
 public:
@@ -47,6 +66,7 @@ private:
 	/** @brief Circuit's output signal */
 	VoltageOut *vout;
 
+	/* Register a set of unknowns to be tracked while solving the circuit */
 	void register_unknowns(const std::vector<std::string>& unknowns);
 };
 

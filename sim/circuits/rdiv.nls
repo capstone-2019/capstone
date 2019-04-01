@@ -1,5 +1,5 @@
 RESISTOR res1 0 1 1k                             # 1kohm resistor
 RESISTOR res2 1 2 1k                            # 1mF capacitor
-VOLTAGE_IN vin 0 2 waves/square20.txt            # voltage input
+VOLTAGE_IN vin 0 2 waves/sinusoid.txt            # voltage input
 VOLTAGE_OUT vout 1 2                             # voltage output
 GROUND 2                                         # node 2 is ground

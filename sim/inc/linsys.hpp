@@ -1,3 +1,16 @@
+/**
+ *
+ * @file linsys.hpp
+ *
+ * @date April 1, 2019
+ *
+ * @brief Provides the interface to linear systems of equations derived
+ * from performing KCLs at various nodes in the circuit.
+ *
+ * @author Matthew Kasper (mkasper@andrew.cmu.edu)
+ *
+ */
+
 #ifndef _LINEAR_SYSTEM_H_
 #define _LINEAR_SYSTEM_H_
 
