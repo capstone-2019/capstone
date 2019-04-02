@@ -22,9 +22,9 @@ AudioManager::AudioManager(input_t input_mode, output_t output_mode,
 
 	/* initialize input */
 	if (input_mode == INPUT_FILE) {
-		FileInput fi(input_filename, infile_type);
-		input_samplerate = fi.get_samplerate();
-		input_num_frames = fi.get_num_frames();
+		FileInput *fi = new FileInput(input_filename, infile_type);
+		input_samplerate = fi->get_samplerate();
+		input_num_frames = fi->get_num_frames();
 		in = fi;
 	} else {
 		std::cerr << "mode not yet supported\n";
@@ -49,7 +49,7 @@ bool AudioManager::get_next_value(double *val) {
 	float x;
 	bool ret;
 
-	ret = in.get_next_value(&x);
+	ret = in->get_next_value(&x);
 	*val = (double) x;
 
 	return ret;

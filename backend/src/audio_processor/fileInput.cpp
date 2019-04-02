@@ -43,7 +43,6 @@ FileInput::FileInput(const char *filename, AudioManager::filetype_t file_type) {
 		}
 		num_frames = frames.size();
 		cur_index = 0;
-		std::cout << "num_frames  = " << num_frames << std::endl;
 	}
 
 
@@ -63,8 +62,6 @@ void FileInput::save(const char *filename) {
 }
 
 bool FileInput::get_next_value(float *val) {
-	std::cout << "cur_index  = " << cur_index << std::endl;
-	std::cout << "nframes = " << num_frames << std::endl;
 	if (cur_index >= num_frames) {
 		return false;
 	}

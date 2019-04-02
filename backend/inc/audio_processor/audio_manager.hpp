@@ -56,7 +56,7 @@ public:
 
 private:
 
-	InputInterface in;
+	InputInterface *in;
 	FileOutput *fout;
 
 	/** @brief used for file inputs */
