@@ -20,6 +20,7 @@
 #include <circuit.hpp>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <chrono>
 
 using Eigen::MatrixXd;
 using Eigen::Upper;
@@ -56,6 +57,15 @@ static int plotter_fd[2];
  */
 #define ENABLE_PLOTTING 0xff
 
+/** @brief Ratio to convert milliseconds to seconds */
+#define MS_TO_S 1000
+
+/**
+ * @brief Handles fatal errors by printing a mesaage and exiting.
+ *
+ * @param fmt A format string for the message.
+ * @param ... Format string arguments.
+ */
 void sim_error(const char *fmt, ...) {
 	va_list vl;
 	va_start(vl, fmt);
@@ -216,6 +226,9 @@ void parse_command_line(int argc, char *argv[], simparams_t *params) {
 int main(int argc, char *argv[]) {
     simparams_t params;
     int plotter_pid;
+    vector<double> timescale;
+    vector<double> input_signal;
+    vector<double> output_signal;
 
     parse_command_line(argc, argv, &params);
     NetlistParser parser(params.circuit_file);
@@ -224,17 +237,27 @@ int main(int argc, char *argv[]) {
     if (params.plot)
     	plotter_pid = launch_plotter();
 
-    vector<double> timescale;
-    vector<double> input_signal;
-    vector<double> output_signal;
-
+    /* read circuit description from netlist */
     Circuit& c = parser.as_circuit();
+
+    /* get starting time */
+    auto t0 = std::chrono::high_resolution_clock::now();
+
+    /* run transient analysis */
     c.transient(timescale, input_signal, output_signal);
+
+    /* get ending time and print timing summary */
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto elapsed_ms =
+    	std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+    double elapsed_s = static_cast<float>(elapsed_ms) / MS_TO_S;
+    cout << "Transient analysis finished in " << elapsed_s << " secs." << endl;
 
 
     /* Pass data into plotting script, wait for plotter to complete */
     if (params.plot) {
 
+    	/* Write data into pipe to communicate with plotter */
     	for (int i = 0; i < timescale.size(); i++) {
     		dprintf(plotter_fd[PIPE_SIDE_WRITE], "%f %f %f\n",
     			timescale[i], input_signal[i], output_signal[i]);
@@ -246,13 +269,6 @@ int main(int argc, char *argv[]) {
 
     	/* wait for child to exit */
     	waitpid(plotter_pid, NULL, 0);
-    }
-
-    else {
-    	for (int i = 0; i < timescale.size(); i++) {
-    		printf("%f %f %f\n", timescale[i], input_signal[i],
-    			output_signal[i]);
-    	}
     }
 
     return 0;

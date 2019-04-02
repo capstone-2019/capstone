@@ -77,12 +77,27 @@ double Component::parse_by_unit(const string& value) {
 	return base * unit_scale;
 }
 
+/**
+ * @brief Constructs a string identifier for an unknown node
+ * voltage.
+ *
+ * @param node_id The node where this voltage is measured.
+ *
+ * @return String identifier for unknown node voltage.
+ */
 string Component::unknown_voltage(int node_id) {
 	std::ostringstream sstream;
 	sstream << "unknown_voltage_" << node_id;
 	return sstream.str();
 }
 
+/**
+ * @brief Constructs a string identifier for an unknown branch current.
+ *
+ * @param node_id The name of the component where this current flows.
+ *
+ * @return String identifier for unknown branch current.
+ */
 string Component::unknown_current(const string& name) {
 	std::ostringstream sstream;
 	sstream << "unknown_current_" << name;

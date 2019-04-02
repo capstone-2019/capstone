@@ -13,7 +13,6 @@
 #include <components/component.hpp>
 #include <iostream>
 
-using std::cout;
 using std::endl;
 
 /**

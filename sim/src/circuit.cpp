@@ -44,7 +44,6 @@ void Circuit::register_unknowns(const vector<string>& new_unknown_variables) {
  * @param node_id The identifier of the ground node.
  */
 void Circuit::register_ground(int node_id) {
-	// std::cout << "REGISTERED GROUND! " << node_id << std::endl;
 	ground_id = node_id;
 }
 
@@ -185,15 +184,11 @@ void Circuit::transient(vector<double>& timescale,
 			run_kcl(dt, soln, prev_soln, sys);
 			auto deltas = sys.solve();
 			converged = process_deltas(deltas, prev_soln);
-			// std::cout << sys
-			//           << "Deltas: " << std::endl << deltas << std::endl;
 		}
 
 		/* record solution for this timestep and advance simulation time */
 		soln = prev_soln;
 		output_signal.push_back(vout->measure(sys, soln));
-		// printf("Time: %f, Vin = %f, Vout = %f\n\n",
-		// 	t, voltage, output_signal[output_signal.size() - 1]);
 		t += dt;
 	}
 }
