@@ -1,5 +1,6 @@
 # Compilation artifacts
 csim
+playback
 *.o
 doc/
 
