@@ -613,10 +613,8 @@ schematic = (function() {
     Schematic.prototype.export = function() {
         // give all the circuit nodes a name, extract netlist
         this.label_connection_points();
-        //var netlist = this.json();
-        //var str = JSON.stringify(netlist);
-        var netlist = this.to_netlist();
 
+        var netlist = this.to_netlist();
         var result = [];
 
         for (var i = 0; i < netlist.length; i++) {
@@ -627,8 +625,8 @@ schematic = (function() {
 
         dialog.showSaveDialog((filename) => {
             if (filename === undefined) {
-                console.log("Did not create a file");
                 return;
+                console.log("Did not create a file");
             }
 
             fs.writeFile(filename, result.join('\n'), (err) => {
@@ -640,7 +638,6 @@ schematic = (function() {
                 alert(filename + ' successfully created!');
             });
         });
-
 
         // also save the structure for import purposes
         var json_version = this.json();
@@ -656,14 +653,37 @@ schematic = (function() {
         // for testing
         console.log(shell_cmd.sayHelloWorld());
 
-        // TODO: change the generic command to run the circuit simulator
+
+        const options_signal = {
+            message: 'Please select a signal file'
+        };
+        const options_netlist = {
+            message: 'Please select a netlist file (.nls)'
+        };
+
+        dialog.showMessageBox(null, options_signal);
+        var signal_files = dialog.showOpenDialog();
+        console.log(signal_files[0]);
+
+        dialog.showMessageBox(null, options_netlist);
+        var netlist_files = dialog.showOpenDialog();
+        console.log(netlist_files[0]);
+
+        // change var command to change the cmd line command ran
+        var command = './csim -c ' + netlist_files[0] + ' -s ' + signal_files[0] + ' --plot';
+        console.log(command);
+        
+        shell_cmd.exec(command, (output) => {
+            console.log(output);
+        });
+
+        // shell_cmd.exec('./csim -c ' + netlist_files[0] + ' -s ' + signal_files[0] + '--plot');
 
         // two ways of executing cmd line args
         // first way spawns a child process; output visible in terminal 
         shell_cmd.exec('python test.py 1 2', (output) => {
             console.log(output);
         })
-
 
         // just a call to execute: output visible in 'browser' / electron console
         execute('python test.py 3 4', (output) => {
