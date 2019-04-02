@@ -608,11 +608,11 @@ schematic = (function() {
 
             });
         });
-        // this.redraw_background();
 
     }
 
 
+    // creates two files: the netlist file for circuit sim, and circuit file for import
     Schematic.prototype.export = function() {
         // give all the circuit nodes a name, extract netlist
         this.label_connection_points();
@@ -626,34 +626,53 @@ schematic = (function() {
             }
         };
 
-        dialog.showSaveDialog((filename) => {
-            if (filename === undefined) {
-                console.log("Did not create a file");
+
+        const options_netlist = {
+            message: 'Please select a location for the netlist file'
+        };
+
+        const options_structure = {
+            message: 'Please select a location for the structure file (for import)'
+        };
+
+        dialog.showMessageBox(null, options_netlist);
+        var filename = dialog.showSaveDialog();
+        if (filename === undefined) {
+            console.log("Did not create a file");
+            return;
+        }
+
+        fs.writeFile(filename, result.join('\n'), (err) => {
+            if(err){
+                console.log("error while creating the file " + err.message);
                 return;
             }
-
-            fs.writeFile(filename, result.join('\n'), (err) => {
-                if(err){
-                    console.log("error while creating the file " + err.message);
-                    return;
-                }
-            
-                alert(filename + ' successfully created!');
-            });
+        
+            alert(filename + ' successfully created!');
         });
 
-        // also save the structure for import purposes
+        dialog.showMessageBox(null, options_structure);
+        filename = dialog.showSaveDialog();
+
+        if (filename === undefined) {
+            console.log("Did not create a file");
+            return;
+        }
+
         var json_version = this.json();
         var str = JSON.stringify(json_version);
+        fs.writeFile(filename, str, (err) => {
+            if(err){
+                console.log("error while creating the file " + err.message);
+                return;
+            }
+        
+            alert(filename + ' successfully created!');
+        });
 
-        try { fs.writeFileSync('circuit_json.txt', str, 'utf-8'); }
-        catch(e) { alert(e); }
-
-        // alert("circuit_netlist.txt successfully created!")
     }
 
     Schematic.prototype.run_simulation = function() {
-        // for testing
         this.enable_tool('run_simulation', false);
 
         console.log(shell_cmd.sayHelloWorld());
@@ -662,8 +681,14 @@ schematic = (function() {
             message: 'Please select a signal file'
         };
 
+        const options_output = {
+            message: 'Select and output location'
+        }
+
         const options_netlist = {
-            message: 'Please select a netlist file (.nls)'
+            message: 'Please select a netlist file (.nls), or select live audio',
+            type: 'question',
+            buttons: ['Upload Netlist', 'Live Audio']
         };
 
         dialog.showMessageBox(null, options_signal);
@@ -677,22 +702,28 @@ schematic = (function() {
 
         console.log(signal_files[0]);
 
-        // TODO: change this to be a question type message.
         // let the user choose to upload a file or do live audio
 
-        dialog.showMessageBox(null, options_netlist);
-        var netlist_files = dialog.showOpenDialog();
+        var choice = dialog.showMessageBox(null, options_netlist);
 
-        if (netlist_files === undefined) {
-            this.enable_tool('run_simulation', true);
-            console.log('no netlist file chosen');
-            return;
+        // choice == 0 if user wants to upload a netlist 
+        if (choice == 0) {
+            var netlist_files = dialog.showOpenDialog();
+
+            if (netlist_files === undefined) {
+                this.enable_tool('run_simulation', true);
+                console.log('no netlist file chosen');
+                return;
+            }
+
+            console.log(netlist_files[0]);
+            var command = './csim -c ' + netlist_files[0] + ' -s ' + signal_files[0] + ' --plot';
+
+        } else {
+            var command = './csim -s ' + signal_files[0] + ' --live --plot';
         }
 
-        console.log(netlist_files[0]);
-
         // change var command to change the cmd line command ran
-        var command = './csim -c ' + netlist_files[0] + ' -s ' + signal_files[0] + ' --plot';
         console.log(command);
         
         shell_cmd.exec(command, (output) => {
@@ -875,46 +906,6 @@ schematic = (function() {
         return json;
     }
 
-/*
-    ///////////////////////////////////////////////////////////////////////////////
-    //
-    //  Simulation interface
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
-    Schematic.prototype.extract_circuit = function() {
-        // give all the circuit nodes a name, extract netlist
-        this.label_connection_points();
-        var netlist = this.json();
-
-        // since we've done the heavy lifting, update input field value
-        // so user can grab diagram if they want
-        this.input.value = JSON.stringify(netlist);
-
-        // create a circuit from the netlist
-        var ckt = new cktsim.Circuit();
-        if (ckt.load_netlist(netlist))
-        return ckt;
-        else
-        return null;
-    }
-
-    // external interface for setting the property value of a named component
-    Schematic.prototype.set_property = function(component_name,property,value) {
-        this.unselect_all(-1);
-
-        for (var i = this.components.length - 1; i >= 0; --i) {
-        var component = this.components[i];
-        if (component.properties['name'] == component_name) {
-            component.properties[property] = value.toString();
-            break;
-        }
-        }
-
-        // update diagram
-        this.redraw_background();
-    }
-*/
     ///////////////////////////////////////////////////////////////////////////////
     //
     //  Drawing support -- deals with scaling and scrolling of diagrama
