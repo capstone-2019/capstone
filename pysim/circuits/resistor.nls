@@ -1,0 +1,4 @@
+RESISTOR res1 0 1 100k
+VOLTAGE_IN vin 0 1 waves/sinusoid.txt
+VOLTAGE_OUT vout 0 1
+GROUND 1
