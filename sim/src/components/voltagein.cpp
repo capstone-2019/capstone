@@ -80,18 +80,14 @@ double VoltageIn::get_sampling_period() {
 	return sample_period;
 }
 
-void VoltageIn::add_contribution(LinearSystem& sys, Eigen::VectorXd prev_soln,
-		double dt) {
+void VoltageIn::add_contribution(LinearSystem& sys, VectorXd& soln,
+	VectorXd& prev_soln, double dt) {
 
 	/* find the indices into the matrix for our unknown quantities */
 	vector<string> unknown_variables = unknowns();
 	int ni = sys.unknowns_map[unknown_variables[1]];
 	int n1 = sys.unknowns_map[unknown_voltage(npos)];
 	int n2 = sys.unknowns_map[unknown_voltage(nneg)];
-
-	// std::cout << "VIN ni = " << ni << std::endl;
-	// std::cout << "VIN n1 = " << n1 << std::endl;
-	// std::cout << "VIN n2 = " << n2 << std::endl;
 
 	/* add LHS contribution */
 	sys.increment_lhs(ni, n1, +1);

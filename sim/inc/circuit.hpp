@@ -75,13 +75,14 @@ private:
 
 	bool process_deltas(const Eigen::VectorXd& deltas,
 		                      Eigen::VectorXd& prev_soln,
-		                      double tolerance = 1.0e-8);
+		                      double tolerance = 1.0e-3);
 
 	/* Register a set of unknowns to be tracked while solving the circuit */
 	void register_unknowns(const std::vector<std::string>& unknowns);
 
 	/* Build system of equations from KCL at each node */
-	void run_kcl(double dt, Eigen::VectorXd& prev_soln, LinearSystem& sys);
+	void run_kcl(double dt, Eigen::VectorXd& soln, Eigen::VectorXd& prev_soln,
+		LinearSystem& sys);
 };
 
 #endif /* _CIRCUIT_H_ */

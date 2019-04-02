@@ -45,7 +45,8 @@ public:
 
 	/* Adds resistor current contributions into system of KCL equations */
 	void add_contribution(LinearSystem& sys,
-		                  Eigen::VectorXd prev_soln,
+		                  Eigen::VectorXd& soln,
+		                  Eigen::VectorXd& prev_soln,
 		                  double dt) override;
 
 private:

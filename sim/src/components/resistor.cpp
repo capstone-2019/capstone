@@ -74,8 +74,8 @@ vector<string> Resistor::unknowns() {
  * designed to override a virtual `add_contribution` method in the component
  * class.
  */
-void Resistor::add_contribution(LinearSystem& sys, VectorXd prev_soln,
-	double dt) {
+void Resistor::add_contribution(LinearSystem& sys, VectorXd& soln,
+	VectorXd& prev_soln, double dt) {
 
 	/* find the indices of the unknowns this resistor impacts */
 	double conductance = 1.0 / resistance;

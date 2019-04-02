@@ -231,20 +231,14 @@ int main(int argc, char *argv[]) {
     Circuit& c = parser.as_circuit();
     c.transient(timescale, input_signal, output_signal);
 
-    for (int i = 0; i < timescale.size(); i++) {
-    	printf("%f %f %f\n", timescale[i], input_signal[i], output_signal[i]);
-    }
 
     /* Pass data into plotting script, wait for plotter to complete */
     if (params.plot) {
 
-    	/**
-    	 * Send a message to the child process.
-    	 *
-    	 * @bug Delete this later and replace with the real contents.
-    	 */
-    	dprintf(plotter_fd[PIPE_SIDE_WRITE], "Hello from the parent!\n");
-    	dprintf(plotter_fd[PIPE_SIDE_WRITE], "Second message from parent!\n");
+    	for (int i = 0; i < timescale.size(); i++) {
+    		dprintf(plotter_fd[PIPE_SIDE_WRITE], "%f %f %f\n",
+    			timescale[i], input_signal[i], output_signal[i]);
+    	}
 
     	/* close the write side of the PIPE, child should see EOF now */
     	if (close(plotter_fd[PIPE_SIDE_WRITE]) < 0)
@@ -252,6 +246,13 @@ int main(int argc, char *argv[]) {
 
     	/* wait for child to exit */
     	waitpid(plotter_pid, NULL, 0);
+    }
+
+    else {
+    	for (int i = 0; i < timescale.size(); i++) {
+    		printf("%f %f %f\n", timescale[i], input_signal[i],
+    			output_signal[i]);
+    	}
     }
 
     return 0;

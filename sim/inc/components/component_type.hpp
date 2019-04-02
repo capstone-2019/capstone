@@ -57,7 +57,8 @@ public:
 	 * @bug This should eventually be made pure virtual.
 	 */
 	virtual void add_contribution(LinearSystem& sys,
-		                          Eigen::VectorXd prev_soln,
+		                          Eigen::VectorXd& soln,
+		                          Eigen::VectorXd& prev_soln,
 		                          double dt)
 	{ }
 

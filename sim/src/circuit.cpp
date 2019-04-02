@@ -1,3 +1,17 @@
+/**
+ *
+ * @file circuit.cpp
+ *
+ * @date April 1, 2019
+ *
+ * @brief This file contains the circuit module, which notably contains the
+ * `transient` function - the core of the circuit simulator - which runs
+ * a transient analysis on the input signal passing through the circuit.
+ *
+ * @author Matthew Kasper (mkasper@andrew.cmu.edu)
+ *
+ */
+
 #include <circuit.hpp>
 #include <parser/netparser.hpp>
 #include <iostream>
@@ -8,6 +22,12 @@ using std::string;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
+/**
+ * @brief Records the unknown variables associated with a component.
+ *
+ * @param new_unknown_variables The new unknown variables for the component
+ * being added to the circuit.
+ */
 void Circuit::register_unknowns(const vector<string>& new_unknown_variables) {
 	for (const auto& unknown : new_unknown_variables) {
 		if (unknowns.find(unknown) == unknowns.end()) {
@@ -48,6 +68,7 @@ void Circuit::register_resistor(Resistor *r) {
  * @bug Not yet implemented.
  */
 void Circuit::register_capacitor(Capacitor *c) {
+	register_unknowns(c->unknowns());
 	components.push_back(c);
 }
 
@@ -75,31 +96,51 @@ void Circuit::register_vout(VoltageOut *vout) {
 	this->vout = vout;
 }
 
-
+/**
+ * @brief Processes the deltas vector produced after each newton iteration.
+ *
+ * Updates the current solution based on the delta vector if the simulation
+ * has not yet converged.
+ *
+ * @param deltas The delta vector.
+ * @param prev_soln The previous solution from the last newton iteration.
+ * @param tolerance The threshold at which iteration should stop.
+ *
+ * @return True if the solution has converged and false otherwise.
+ */
 bool Circuit::process_deltas(const VectorXd& deltas, VectorXd& prev_soln,
 	double tolerance) {
 
+	/* find the largest of all the deltas */
 	double max_delta = fabs(deltas(0));
-
 	for (int r = 0; r < total_unknowns; r++)
 		max_delta = fmax(fabs(deltas(r)), max_delta);
 
-	// std::cout << "max_delta = " << max_delta << std::endl;
-	// std::cout << deltas << std::endl;
+	/* converged - no more work to do */
+	bool converged = (max_delta < tolerance || isnan(max_delta));
 
-	if (max_delta < tolerance)
-		return true;
-
-	for (int r = 0; r < total_unknowns; r++)
+	/* update current solution and continue with newton iterations */
+	for (int r = 0; r < total_unknowns; r++) {
 		prev_soln(r) += deltas(r);
+	}
 
-	return false;
+	return converged;
 }
 
-void Circuit::run_kcl(double dt, VectorXd& prev_soln, LinearSystem& sys) {
+/**
+ * @brief Produces a system of equations by running KCL at each node in the
+ * circuit.
+ *
+ * @param dt Input signal sampling period.
+ * @param prev_soln The solution on the previous newton iteration.
+ * @param sys The system of linear equations to be filled in.
+ */
+void Circuit::run_kcl(double dt, VectorXd& soln, VectorXd& prev_soln,
+	LinearSystem& sys) {
+
 	sys.clear();
 	for (auto c : components) {
-		c->add_contribution(sys, prev_soln, dt);
+		c->add_contribution(sys, soln, prev_soln, dt);
 	}
 }
 
@@ -122,8 +163,6 @@ void Circuit::transient(vector<double>& timescale,
 	                    vector<double>& input_signal,
 	                    vector<double>& output_signal) {
 
-	// std::cout << "Ground (here) is " << ground_id << std::endl;
-	print_unknowns_map(unknowns);
 	double dt = vin->get_sampling_period();
 	double t = 0;
 	double voltage;
@@ -143,17 +182,18 @@ void Circuit::transient(vector<double>& timescale,
 
 		/* run at most MAX_ITERATIONS iterations of newton's method */
 		for (int iter = 0; iter < MAX_ITERATIONS && !converged; iter++) {
-			run_kcl(dt, prev_soln, sys);
-			auto& deltas = sys.solve();
-			// printf("Iter = %d, VIN = %lf\n", iter, voltage);
-			// std::cout << sys.to_string() << std::endl;
-			// std::cout << "-----------------------------" << std::endl << std::endl;
+			run_kcl(dt, soln, prev_soln, sys);
+			auto deltas = sys.solve();
 			converged = process_deltas(deltas, prev_soln);
+			// std::cout << sys
+			//           << "Deltas: " << std::endl << deltas << std::endl;
 		}
 
 		/* record solution for this timestep and advance simulation time */
 		soln = prev_soln;
 		output_signal.push_back(vout->measure(sys, soln));
+		// printf("Time: %f, Vin = %f, Vout = %f\n\n",
+		// 	t, voltage, output_signal[output_signal.size() - 1]);
 		t += dt;
 	}
 }

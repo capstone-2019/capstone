@@ -1,17 +1,20 @@
+/**
+ *
+ * @file linsys.cpp
+ *
+ * @brief This file contains the implementation of a solver for linear
+ * system of equations based on top of Eigen.
+ *
+ * @author Matthew Kasper (mkasper@andrew.cmu.edu)
+ *
+ */
+
 #include <linsys.hpp>
 #include <components/component.hpp>
 #include <iostream>
 
 using std::cout;
 using std::endl;
-
-void print_unknowns_map(std::unordered_map<std::string, int> m) {
-	for (auto it = m.begin(); it != m.end(); it++) {
-		auto key = it->first;
-		auto val = it->second;
-		cout << key << " -> " << val << endl;
-	}
-}
 
 /**
  * @brief Constructs a new linear system.
@@ -42,6 +45,10 @@ LinearSystem::LinearSystem(int num_unknowns, int ground_id,
 	}
 }
 
+/**
+ * @brief Zeros out a linear system, and reinitializes the first equation:
+ * setting the ground voltage to zero.
+ */
 void LinearSystem::clear() {
 	A.setZero();
 	x.setZero();
@@ -49,20 +56,31 @@ void LinearSystem::clear() {
 	A(ground, ground) = 1.0;
 }
 
+/**
+ * @brief Produces a string representation of a system of equations.
+ *
+ * @return Text representation of the linear system of equations.
+ */
 std::string LinearSystem::to_string() {
 	std::ostringstream sysstream;
 	sysstream << "---------------------------------------------------------"
 	          << "Linear System: " << endl
 	          << "Ground node is: " << ground << endl
-		      << "A = " << endl << A << endl << endl
-		      << "x = " << endl << x << endl << endl
-		      << "B = " << endl << B << endl << endl
-		      << "L = " << endl << unknown_labels << endl << endl
+		      << "A = "      << endl << A << endl << endl
+		      << "x = "      << endl << x << endl << endl
+		      << "B = "      << endl << B << endl << endl
+		      << "Labels = " << endl << unknown_labels << endl << endl
 		      << "---------------------------------------------------------"
 		      << endl;
 	return sysstream.str();
 }
 
+/**
+ * @brief Solves the system of equations. After calling this function,
+ * the `x` vector will contain the solution.
+ *
+ * @return The solution vector `x` to the system Ax = B.
+ */
 Eigen::VectorXd& LinearSystem::solve() {
 	x = A.colPivHouseholderQr().solve(B);
 	return x;

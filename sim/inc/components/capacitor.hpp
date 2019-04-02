@@ -39,6 +39,14 @@ public:
 	/* Convert a capacitor to its string representation */
 	std::string to_string() override;
 
+	std::vector<std::string> unknowns() override;
+
+	/* Adds resistor current contributions into system of KCL equations */
+	void add_contribution(LinearSystem& sys,
+			              Eigen::VectorXd& soln,
+		                  Eigen::VectorXd& prev_soln,
+		                  double dt) override;
+
 private:
 	int npos;            /**< Positive terminal */
 	int nneg;            /**< Negative terminal */
