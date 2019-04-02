@@ -20,6 +20,7 @@
 using std::vector;
 using std::string;
 using Eigen::VectorXd;
+using std::unordered_map;
 
 /**
  * @brief Constructs a new capacitor.
@@ -59,6 +60,18 @@ vector<string> Capacitor::unknowns() {
 }
 
 /**
+ * @brief Pre-computes the mappings from unknown quantities associated with
+ * this component to indices that will be used to construct the KCL matrix.
+ *
+ * @param mappings Hash map which maps string unknown identifiers to
+ * integer unknown IDs.
+ */
+void Capacitor::map_unknowns(unordered_map<string, int> mappings) {
+	this->n1 = mappings[unknown_voltage(npos)];
+	this->n2 = mappings[unknown_voltage(nneg)];
+}
+
+/**
  * @brief Adds the contributions of this capacitor to the system of KCL
  * equations.
  *
@@ -69,10 +82,6 @@ vector<string> Capacitor::unknowns() {
  */
 void Capacitor::add_contribution(LinearSystem& sys, VectorXd& soln,
 	VectorXd& prev_soln, double dt) {
-
-	vector<string> unknown_variables = unknowns();
-	int n1 = sys.unknowns_map[unknown_variables[0]];
-	int n2 = sys.unknowns_map[unknown_variables[1]];
 
 	float C = capacitance;
 	sys.increment_lhs(n1, n1, +C/dt);

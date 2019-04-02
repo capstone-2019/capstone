@@ -19,6 +19,7 @@
 
 using std::vector;
 using std::string;
+using std::unordered_map;
 using Eigen::VectorXd;
 
 /**
@@ -63,6 +64,18 @@ vector<string> Resistor::unknowns() {
 }
 
 /**
+ * @brief Pre-computes the mappings from unknown quantities associated with
+ * this component to indices that will be used to construct the KCL matrix.
+ *
+ * @param mappings Hash map which maps string unknown identifiers to
+ * integer unknown IDs.
+ */
+void Resistor::map_unknowns(unordered_map<string, int> mappings) {
+	this->n1 = mappings[unknown_voltage(npos)];
+	this->n2 = mappings[unknown_voltage(nneg)];
+}
+
+/**
  * @brief Adds the contributions of this resistor to the KCL equations
  * to the approprate places in the system matrix.
  *
@@ -79,12 +92,6 @@ void Resistor::add_contribution(LinearSystem& sys, VectorXd& soln,
 
 	/* find the indices of the unknowns this resistor impacts */
 	double conductance = 1.0 / resistance;
-	vector<string> unknown_variables = unknowns();
-	int n1 = sys.unknowns_map[unknown_variables[0]];
-	int n2 = sys.unknowns_map[unknown_variables[1]];
-
-	// std::cout << "Resistor : n1 = " << n1 << std::endl;
-	// std::cout << "Resistor : n2 = " << n2 << std::endl;
 
 	/* adjust LHS of the system */
 	sys.increment_lhs(n1, n1, +conductance);
