@@ -86,6 +86,13 @@ public:
     ~NetlistParser();
     /* Get a vector of the circuit components in the netlist */
     std::vector<Component*> get_components();
+
+    /**
+     * @brief Maps netlist format to internal circuit format.
+     *
+     * @return Internal circuit representation of the specified circuit.
+     */
+    Circuit& as_circuit() { return c; }
 private:
     Component *component_from_tokens(std::vector<std::string>& tokens);
     std::vector<Component*> components;  /**< List of components in circuit*/

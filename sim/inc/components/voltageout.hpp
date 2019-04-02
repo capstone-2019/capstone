@@ -14,6 +14,7 @@
 
 #include <vector>
 #include <string>
+#include <linsys.hpp>
 
 /**
  * @brief Class to contain the functionality for the VoltageOut component
@@ -36,6 +37,9 @@ public:
 
 	/* Convert a voltage output to a string */
 	std::string to_string() override;
+
+	/* Measure the potential difference across output terminals */
+	double measure(LinearSystem& sys, Eigen::VectorXd& soln);
 
 private:
 	int npos;  /**< Positive terminal */

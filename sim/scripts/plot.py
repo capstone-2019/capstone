@@ -42,7 +42,7 @@ def sinusoid(t_start, t_end, period,
 
 	if nsamples is None:
 		nsamples = math.ceil((t_end - t_start) * sample_rate)
-	sampling_period = float(t_end - t_start) / nsamples
+        sampling_period = float(t_end - t_start) / nsamples
 
 	f = 1.0 / period
 	w = 2 * np.pi * f

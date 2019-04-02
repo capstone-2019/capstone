@@ -2,3 +2,7 @@
 csim
 *.o
 doc/
+
+# vim stuff
+*.swo
+*.swp

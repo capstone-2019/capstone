@@ -42,9 +42,11 @@ public:
 	std::string to_string() override;
 	/* Gets a vector of unknowns that resistor contributes to */
 	std::vector<std::string> unknowns() override;
+
 	/* Adds resistor current contributions into system of KCL equations */
-	void add_contribution(LinearSystem& sys, Eigen::VectorXd prev_soln,
-		double dt);
+	void add_contribution(LinearSystem& sys,
+		                  Eigen::VectorXd prev_soln,
+		                  double dt) override;
 
 private:
 	int npos;             /**< Positive terminal of the resistor */

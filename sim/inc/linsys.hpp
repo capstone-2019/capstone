@@ -15,6 +15,12 @@
 #define _LINEAR_SYSTEM_H_
 
 #include <Eigen/Dense>
+#include <unordered_map>
+#include <stdio.h>
+#include <errors.hpp>
+#include <sstream>
+
+void print_unknowns_map(std::unordered_map<std::string, int> m);
 
 /**
  * @brief Represents the system of linear equations Ax=B derived from
@@ -27,56 +33,31 @@ struct LinearSystem {
 	Eigen::VectorXd B;  /**< RHS vector of system of linear equations */
 	std::unordered_map<std::string, int> unknowns_map;
 
-	/**
-	 * @brief Constructs a new linear system.
-	 *
-	 * @param ground_id The ground node identifier.
-	 */
+	typedef Eigen::Matrix<std::string, Eigen::Dynamic, 1> VectorXs;
+	VectorXs unknown_labels;
+
+
 	LinearSystem(int num_unknowns, int ground_id,
-		std::unordered_map<std::string, int> unknowns_map) {
+		std::unordered_map<std::string, int> unknowns);
 
-		A = Eigen::MatrixXd(num_unknowns, num_unknowns);
-		x = Eigen::VectorXd(num_unknowns);
-		B = Eigen::VectorXd(num_unknowns);
-		A(ground_id, ground_id) = 1.0;
-	}
-
-	/**
-	 * @brief Destroys the linear system.
-	 */
 	~LinearSystem() { }
+
+	void clear();
+
+	std::string to_string();
 
 	/**
 	 * @brief Solves the system of equations. After calling this function,
 	 * the `x` vector will contain the solution.
 	 */
-	void solve() {
-		x = A.colPivHouseholderQr().solve(B);
-	}
+	Eigen::VectorXd& solve();
 
-	/**
-	 * @brief Increments the LHS of the system of equations at a given
-	 * position by a provided delta.
-	 *
-	 * @param r The row to update.
-	 * @param c The column to update.
-	 * @param delta The value to increment by.
-	 */
-	void increment_lhs(int r, int c, double delta) {
-		if (r != ground)
-			A(r, c) += delta;
-	}
+	void increment_lhs(int r, int c, double delta);
+	void increment_rhs(int r, double delta);
 
-	/**
-	 * @brief Increments the RHS of the system of equations at a given
-	 * position by a provided delta.
-	 *
-	 * @param r The row to update.
-	 * @param delta The value to increment by.
-	 */
-	void increment_rhs(int r, double delta) {
-		if (r != ground)
-			x(r) += delta;
+	friend std::ostream& operator<<(std::ostream& out, LinearSystem& sys) {
+		out << sys.to_string();
+		return out;
 	}
 };
 

@@ -83,11 +83,14 @@ void Resistor::add_contribution(LinearSystem& sys, VectorXd prev_soln,
 	int n1 = sys.unknowns_map[unknown_variables[0]];
 	int n2 = sys.unknowns_map[unknown_variables[1]];
 
+	// std::cout << "Resistor : n1 = " << n1 << std::endl;
+	// std::cout << "Resistor : n2 = " << n2 << std::endl;
+
 	/* adjust LHS of the system */
 	sys.increment_lhs(n1, n1, +conductance);
 	sys.increment_lhs(n2, n2, +conductance);
 	sys.increment_lhs(n1, n2, -conductance);
-	sys.increment_lhs(n2, n2, -conductance);
+	sys.increment_lhs(n2, n1, -conductance);
 
 	/* adjust RHS of the system */
 	double rhs_delta = conductance * (prev_soln(n2) - prev_soln(n1));

@@ -224,6 +224,17 @@ int main(int argc, char *argv[]) {
     if (params.plot)
     	plotter_pid = launch_plotter();
 
+    vector<double> timescale;
+    vector<double> input_signal;
+    vector<double> output_signal;
+
+    Circuit& c = parser.as_circuit();
+    c.transient(timescale, input_signal, output_signal);
+
+    for (int i = 0; i < timescale.size(); i++) {
+    	printf("%f %f %f\n", timescale[i], input_signal[i], output_signal[i]);
+    }
+
     /* Pass data into plotting script, wait for plotter to complete */
     if (params.plot) {
 

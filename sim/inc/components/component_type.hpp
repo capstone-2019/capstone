@@ -17,6 +17,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <linsys.hpp>
 
 class Component
 {
@@ -46,6 +47,21 @@ public:
 	virtual std::vector<std::string> unknowns() { return {}; }
 
 	/**
+	 * @brief Adds the contributions of a component into the system of KCL
+	 * equations.
+	 *
+	 * @param sys The system of equations.
+	 * @param prev_soln The solution from the previous newton iteration.
+	 * @param dt The signal sampling period.
+	 *
+	 * @bug This should eventually be made pure virtual.
+	 */
+	virtual void add_contribution(LinearSystem& sys,
+		                          Eigen::VectorXd prev_soln,
+		                          double dt)
+	{ }
+
+	/**
 	 * @brief Writes the string representation of a component to a stream.
 	 *
 	 * @param out The stream the component should be written to.
@@ -58,15 +74,15 @@ public:
 		return out;
 	}
 
+	/* Creates a label for an unknown node voltage */
+	static std::string unknown_voltage(int node_id);
+	/* Creates a label for an unknown branch current */
+	static std::string unknown_current(const std::string& name);
+
 protected:
 	/* Given a string like "15k" converts it into an appropraite double
 	 * (i.e. 15k -> 15000.0) */
 	double parse_by_unit(const std::string& value);
-
-	/* Creates a label for an unknown node voltage */
-	std::string unknown_voltage(int node_id);
-	/* Creates a label for an unknown branch current */
-	std::string unknown_current(const std::string& name);
 
 private:
 	/* maps supported unit types to scale factors */

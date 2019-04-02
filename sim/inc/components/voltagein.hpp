@@ -46,9 +46,14 @@ public:
 	std::string to_string() override;
 	/* Get the unknonws associated with the voltage input */
 	std::vector<std::string> unknowns() override;
+
 	/* Adds resistor current contributions into system of KCL equations */
-	void add_contribution(LinearSystem& sys, Eigen::VectorXd prev_soln,
-		double dt);
+	void add_contribution(LinearSystem& sys,
+		                  Eigen::VectorXd prev_soln,
+		                  double dt) override;
+
+	/* Gets the sampling period of input signal */
+	double get_sampling_period();
 
 private:
 	int npos;                  /**< positive terminal */

@@ -47,7 +47,14 @@ public:
 	void register_vin(VoltageIn *vin);
 	void register_vout(VoltageOut *vout);
 
+	void transient(std::vector<double>& timescale,
+		           std::vector<double>& input_signal,
+		           std::vector<double>& output_signal);
+
 private:
+
+	/**@brief Max number of newton iterations for a round of analysis */
+	static constexpr const int MAX_ITERATIONS = 100;
 
 	/** @brief maps human readable unknowns to their integer identifiers */
 	std::unordered_map<std::string, int> unknowns;
@@ -66,8 +73,15 @@ private:
 	/** @brief Circuit's output signal */
 	VoltageOut *vout;
 
+	bool process_deltas(const Eigen::VectorXd& deltas,
+		                      Eigen::VectorXd& prev_soln,
+		                      double tolerance = 1.0e-8);
+
 	/* Register a set of unknowns to be tracked while solving the circuit */
 	void register_unknowns(const std::vector<std::string>& unknowns);
+
+	/* Build system of equations from KCL at each node */
+	void run_kcl(double dt, Eigen::VectorXd& prev_soln, LinearSystem& sys);
 };
 
 #endif /* _CIRCUIT_H_ */

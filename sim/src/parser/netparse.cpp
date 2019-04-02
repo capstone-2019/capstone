@@ -1,3 +1,17 @@
+/**
+ *
+ * @file netparse.cpp
+ *
+ * @date April 1, 2019
+ *
+ * @brief Contains the implementation of the netlist parser, which is used
+ * to go from the netlist file representation of a circuit to the simulator's
+ * internal format.
+ *
+ * @author Matthew Kasper (mkasper@andrew.cmu.edu)
+ *
+ */
+
 #include <string>
 #include <string.h>
 #include <vector>
@@ -146,6 +160,7 @@ NetlistParser::NetlistParser(const char *netfile) {
         vector<string> tokens = tokenize(line);
         if (tokens[0] == "GROUND") {
             ground_id = stoi(tokens[1]);
+            c.register_ground(ground_id);
         }
         else {
             components.push_back(component_from_tokens(tokens));
@@ -156,12 +171,9 @@ NetlistParser::NetlistParser(const char *netfile) {
 /**
  * @brief Destroys the netlist parser, freeing all allocated resources.
  *
- * @bug Should use smart pointers.
+ * @bug Should use smart pointers to make sure components get free'd.
  */
 NetlistParser::~NetlistParser() {
-    // for (Component *c : components) {
-    //     delete c;
-    // }
 }
 
 /**
@@ -175,34 +187,43 @@ NetlistParser::~NetlistParser() {
  * @bug Should use smart pointers.
  */
 Component *NetlistParser::component_from_tokens(vector<string> &tokens) {
+
+    /* resistor */
     if (tokens[0] == Resistor::IDENTIFIER) {
         Resistor *res = new Resistor(tokens);
         c.register_resistor(res);
         return res;
     }
+
+    /* capacitor */
     else if (tokens[0] == Capacitor::IDENTIFIER) {
         Capacitor *cap = new Capacitor(tokens);
         c.register_capacitor(cap);
         return cap;
     }
+
+    /* input voltage */
     else if (tokens[0] == VoltageIn::IDENTIFIER) {
         VoltageIn *vin = new VoltageIn(tokens);
-        double voltage;
-        while (vin->next_voltage(&voltage)) {
-            std::cout << "HERE: " << voltage << std::endl;
-        }
         c.register_vin(vin);
         return vin;
     }
+
+    /* output voltage */
     else if (tokens[0] == VoltageOut::IDENTIFIER) {
         VoltageOut *vout = new VoltageOut(tokens);
         c.register_vout(vout);
         return vout;
     }
+
+    /* ground node */
     else if (tokens[0] == "GROUND") {
         c.register_ground(stoi(tokens[1]));
         return NULL;
-    } else {
+    }
+
+    /* bad identifier */
+    else {
         std::cerr << "Unrecognized token " << tokens[0] << std::endl;
         return NULL;
     }

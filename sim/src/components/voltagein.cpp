@@ -66,13 +66,18 @@ vector<string> VoltageIn::unknowns() {
 	return unknown_variables;
 }
 
-bool VoltageIn::next_voltage(double *V) {
+bool VoltageIn::next_voltage(double *voltage) {
 	if (vit == voltages.end())
 		return false;
 
-	*V = *vit;
+	*voltage = *vit;
+	this->V = *vit;
 	vit++;
 	return true;
+}
+
+double VoltageIn::get_sampling_period() {
+	return sample_period;
 }
 
 void VoltageIn::add_contribution(LinearSystem& sys, Eigen::VectorXd prev_soln,
@@ -83,6 +88,10 @@ void VoltageIn::add_contribution(LinearSystem& sys, Eigen::VectorXd prev_soln,
 	int ni = sys.unknowns_map[unknown_variables[1]];
 	int n1 = sys.unknowns_map[unknown_voltage(npos)];
 	int n2 = sys.unknowns_map[unknown_voltage(nneg)];
+
+	// std::cout << "VIN ni = " << ni << std::endl;
+	// std::cout << "VIN n1 = " << n1 << std::endl;
+	// std::cout << "VIN n2 = " << n2 << std::endl;
 
 	/* add LHS contribution */
 	sys.increment_lhs(ni, n1, +1);
