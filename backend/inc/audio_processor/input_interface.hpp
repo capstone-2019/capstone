@@ -17,9 +17,9 @@ public:
 	InputInterface() { }
 	~InputInterface() {}
 
-	virtual bool get_next_value(float *val) {}
+	virtual bool get_next_value(float *val) { return false; }
 
-	virtual int get_samplerate() {}
+	virtual int get_samplerate() { return -1; }
 
 private:
 

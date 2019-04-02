@@ -46,7 +46,7 @@ private:
 	int npos;  /**< Positive terminal */
 	int nneg;  /**< Negative terminal */
 
-	AudioManager am; /**< Where we report output voltages to */
+	AudioManager *am; /**< Where we report output voltages to */
 };
 
 #endif /* _VOLTAGE_OUT_H_ */

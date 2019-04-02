@@ -49,6 +49,8 @@ public:
 	/** @brief sets the next value. */
 	void set_next_value(double val);
 
+	double get_sampling_period() { return 1.0 / input_samplerate; }
+
 	/** @brief flush the values into a file */
 	void finish();
 
