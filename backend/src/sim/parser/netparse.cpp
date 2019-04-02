@@ -52,6 +52,12 @@ static vector<string> tokenize(const std::string& s, const char *delims = " ")
     return tokens;
 }
 
+static AudioManager::filetype_t get_filetype(const string& fname) {
+    if (fname.substr(fname.find_last_of(".") + 1) == "wav")
+        return AudioManager::FILETYPE_WAV;
+    return AudioManager::FILETYPE_TXT;
+}
+
 /****************************************************************************
  *                             NetlistIterator                              *
  ****************************************************************************/
@@ -153,7 +159,21 @@ string NetlistIterator::remove_comments(const string& line) {
  *
  * @param netfile The file containing the circuit netlist description.
  */
-NetlistParser::NetlistParser(const char *netfile, const char *sigfile) {
+NetlistParser::NetlistParser(const char *netfile, const char *sigfile,
+    const char *outfile) {
+
+    /**
+     * Construct the AudioManager for the circuit simulation.
+     *
+     * @bug THIS WILL NOT WORK FOR LIVE AUDIO.
+     */
+    this->am = new AudioManager(
+        AudioManager::INPUT_FILE,
+        AudioManager::OUTPUT_FILE,
+        sigfile,
+        outfile,
+        get_filetype(sigfile));
+
     input_signal_file = sigfile;
     NetlistIterator ni (netfile);
 
@@ -207,14 +227,14 @@ Component *NetlistParser::component_from_tokens(vector<string> &tokens) {
 
     /* input voltage */
     else if (tokens[0] == VoltageIn::IDENTIFIER) {
-        VoltageIn *vin = new VoltageIn(tokens, input_signal_file);
+        VoltageIn *vin = new VoltageIn(tokens, am);
         c.register_vin(vin);
         return vin;
     }
 
     /* output voltage */
     else if (tokens[0] == VoltageOut::IDENTIFIER) {
-        VoltageOut *vout = new VoltageOut(tokens);
+        VoltageOut *vout = new VoltageOut(tokens, am);
         c.register_vout(vout);
         return vout;
     }

@@ -22,6 +22,7 @@
 #include <fstream>
 #include <components/component.hpp>
 #include <circuit.hpp>
+#include <audio_manager.hpp>
 
 /****************************************************************************
  *                             NetlistIterator                              *
@@ -81,7 +82,9 @@ class NetlistParser
 {
 public:
     /* Create a netlist parser */
-    NetlistParser(const char *netfile, const char *sigfile);
+    NetlistParser(const char *netfile, const char *sigfile,
+        const char *outfile);
+
     /* Destroy a netlist parser */
     ~NetlistParser();
     /* Get a vector of the circuit components in the netlist */
@@ -99,6 +102,8 @@ private:
     std::vector<Component*> components;  /**< List of components in circuit*/
     int ground_id;                       /**< ID of ground node */
     Circuit c;                           /**< Internal circuit representation */
+
+    AudioManager *am;
 };
 
 #endif /* _NETPARSER_H_ */

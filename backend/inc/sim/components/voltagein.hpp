@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <linsys.hpp>
 #include <unordered_map>
+#include <audio_manager.hpp>
 
 /**
  * @brief Class to contain the functionality for the VoltageIn component
@@ -33,7 +34,8 @@ public:
 	static constexpr const char *IDENTIFIER = "VOLTAGE_IN";
 
 	/* Construct a new VoltageIn */
-	VoltageIn(const std::vector<std::string>& tokens, const char *sigfile);
+	VoltageIn(const std::vector<std::string>& tokens,
+		      AudioManager *am);
 
 	/**
 	 * @brief Destroys a voltage input.
@@ -73,6 +75,8 @@ private:
 	int n1;  /**< Matrix index for unknown voltage at (+) terminal */
 	int n2;  /**< Matrix index for unknown voltage at (-) terminal */
 	int ni;  /**< Matrix index for unknown branch current through source */
+
+	AudioManager *am; /**< AudioManager provides the signals we use */
 };
 
 #endif /* _VOLTAGE_IN_H_ */

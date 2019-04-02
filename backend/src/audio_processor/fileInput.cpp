@@ -1,11 +1,11 @@
 /**
  * @file fileInput.cpp
- * 
+ *
  * @brief conatins the implementation for FileInput, which parses and manages
  * audio files.
- * 
+ *
  * @author Joseph Kim
- * 
+ *
  */
 
 #include <fileInput.hpp>
@@ -42,13 +42,14 @@ FileInput::FileInput(const char *filename, AudioManager::filetype_t file_type) {
 			frames.push_back(stod(line));
 		}
 		num_frames = frames.size();
+		cur_index = 0;
 	}
-	
+
 
 }
 
 void FileInput::save(const char *filename) {
-	
+
 	FILE* outfile = fopen(filename, "w");
 
 	fprintf(outfile, "%d\n%d\n", samplerate, num_frames);
