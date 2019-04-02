@@ -9,6 +9,8 @@
 #ifndef _INPUT_INTERFACE_H_
 #define _INPUT_INTERFACE_H_
 
+#include <iostream>
+
 class InputInterface
 {
 
@@ -17,9 +19,8 @@ public:
 	InputInterface() { }
 	~InputInterface() {}
 
-	virtual bool get_next_value(float *val) { return false; }
-
-	virtual int get_samplerate() { return -1; }
+	virtual bool get_next_value(float *val) = 0;
+	virtual int get_samplerate() = 0;
 
 private:
 

@@ -90,6 +90,7 @@ void VoltageIn::map_unknowns(unordered_map<string, int> mappings) {
 bool VoltageIn::next_voltage(double *voltage) {
 	bool ret = am->get_next_value(voltage);
 	this->V = *voltage;
+	std::cout << "ret = " << ret << "this->V = " << this->V << std::endl;
 	return ret;
 }
 

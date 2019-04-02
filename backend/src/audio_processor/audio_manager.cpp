@@ -1,7 +1,7 @@
 /**
  * @file audio_manager.cpp
  *
- * @brief contains the implementation for the audio manager class, that is 
+ * @brief contains the implementation for the audio manager class, that is
  * responsible for managing audio input and output.
  *
  * @author Joseph Kim (younghck)
@@ -11,6 +11,7 @@
 #include <fileInput.hpp>
 #include <iostream>
 #include <assert.h>
+#include <errors.hpp>
 
 AudioManager::AudioManager(input_t input_mode, output_t output_mode,
 			 const char *input_filename, const char *output_filename,
@@ -34,7 +35,7 @@ AudioManager::AudioManager(input_t input_mode, output_t output_mode,
 	if (output_mode & OUTPUT_FILE) {
 		fout = new FileOutput(output_filename, input_samplerate);
 	}
-	if (output_mode & OUTPUT_FILE) {
+	if (output_mode & OUTPUT_HARDWARE) {
 		std::cerr << "mode not yet supported\n";
 		assert(false);
 	}
@@ -51,7 +52,7 @@ bool AudioManager::get_next_value(double *val) {
 	ret = in.get_next_value(&x);
 	*val = (double) x;
 
-	return ret;	
+	return ret;
 }
 
 void AudioManager::set_next_value(double val) {
