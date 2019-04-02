@@ -576,9 +576,24 @@ schematic = (function() {
     Schematic.prototype.import = function() {
         console.log(shell_cmd.sayHelloWorld());
 
+        dialog.showOpenDialog((filenames) => {
+            if (filenames === undefined) {
+                console.log("no file selected");
+                return;
+            }
+            console.log(filenames);
 
+            fs.readFile(filenames[0], 'utf-8', (err, data) => {
+                if (err) {
+                    console.log("error reading file ", err);
+                    return;
+                }
+                console.log(data);
 
+                alert("successfully imported " + filenames[0]);
 
+            });
+        });
 
     }
 
@@ -612,7 +627,6 @@ schematic = (function() {
             
                 alert(filename + ' successfully created!');
             });
-
         });
 
 
