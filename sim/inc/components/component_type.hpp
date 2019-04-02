@@ -18,6 +18,7 @@
 #include <iostream>
 #include <vector>
 #include <linsys.hpp>
+#include <unordered_map>
 
 class Component
 {
@@ -61,6 +62,12 @@ public:
 		                          Eigen::VectorXd& prev_soln,
 		                          double dt)
 	{ }
+
+	/**
+	 * @brief Maps the unknowns for a component to the correct indices
+	 * in the matrices for a linear system
+	 */
+	virtual void map_unknowns(std::unordered_map<std::string, int> mapping) { }
 
 	/**
 	 * @brief Writes the string representation of a component to a stream.

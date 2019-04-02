@@ -19,6 +19,7 @@
 #include <string>
 #include <stdbool.h>
 #include <linsys.hpp>
+#include <unordered_map>
 
 /**
  * @brief Class to contain the functionality for the VoltageIn component
@@ -47,6 +48,9 @@ public:
 	/* Get the unknonws associated with the voltage input */
 	std::vector<std::string> unknowns() override;
 
+	/* map unknowns into matrix indices in a linear system */
+	void map_unknowns(std::unordered_map<std::string, int> mapping) override;
+
 	/* Adds resistor current contributions into system of KCL equations */
 	void add_contribution(LinearSystem& sys,
 		                  Eigen::VectorXd& soln,
@@ -65,6 +69,10 @@ private:
 	std::vector<double>::iterator vit;  /**< iterator over voltages */
 	double V;                           /**< current voltage */
 	double sample_period;               /**< signal's samping period */
+
+	int n1;  /**< Matrix index for unknown voltage at (+) terminal */
+	int n2;  /**< Matrix index for unknown voltage at (-) terminal */
+	int ni;  /**< Matrix index for unknown branch current through source */
 };
 
 #endif /* _VOLTAGE_IN_H_ */

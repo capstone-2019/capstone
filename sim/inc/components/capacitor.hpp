@@ -16,6 +16,7 @@
 
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 /**
  * @brief Class to represent capacitors - a passive energy storage device
@@ -39,7 +40,11 @@ public:
 	/* Convert a capacitor to its string representation */
 	std::string to_string() override;
 
+	/* get the unknown quantities for this component */
 	std::vector<std::string> unknowns() override;
+
+	/* map unknowns into matrix indices in a linear system */
+	void map_unknowns(std::unordered_map<std::string, int> mapping) override;
 
 	/* Adds resistor current contributions into system of KCL equations */
 	void add_contribution(LinearSystem& sys,
@@ -51,6 +56,9 @@ private:
 	int npos;            /**< Positive terminal */
 	int nneg;            /**< Negative terminal */
 	double capacitance;  /**< Capacitance in farads */
+
+	int n1; /**< Matrix index for unknown npos voltage */
+	int n2; /**< Matrix index for unknown nneg voltage */
 };
 
 #endif /* _CAPACITOR_H_ */

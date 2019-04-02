@@ -18,6 +18,7 @@
 #include <string>
 #include <unordered_map>
 #include <linsys.hpp>
+#include <unordered_map>
 
 /**
  * @brief Class to capture the basic functionality of the resistor
@@ -43,6 +44,9 @@ public:
 	/* Gets a vector of unknowns that resistor contributes to */
 	std::vector<std::string> unknowns() override;
 
+	/* map unknowns into matrix indices in a linear system */
+	void map_unknowns(std::unordered_map<std::string, int> mapping) override;
+
 	/* Adds resistor current contributions into system of KCL equations */
 	void add_contribution(LinearSystem& sys,
 		                  Eigen::VectorXd& soln,
@@ -53,6 +57,9 @@ private:
 	int npos;             /**< Positive terminal of the resistor */
 	int nneg;             /**< Negative terminal of the resistor */
 	double resistance;    /**< Resistance in ohms */
+
+	int n1; /**< Matrix index for unknown npos voltage */
+	int n2; /**< Matrix index for unknown nneg voltage */
 };
 
 #endif /* _RESISTOR_H_ */

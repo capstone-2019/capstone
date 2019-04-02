@@ -56,6 +56,7 @@ void Circuit::register_ground(int node_id) {
  */
 void Circuit::register_resistor(Resistor *r) {
 	register_unknowns(r->unknowns());
+	r->map_unknowns(unknowns);
 	components.push_back(r);
 }
 
@@ -68,6 +69,7 @@ void Circuit::register_resistor(Resistor *r) {
  */
 void Circuit::register_capacitor(Capacitor *c) {
 	register_unknowns(c->unknowns());
+	c->map_unknowns(unknowns);
 	components.push_back(c);
 }
 
@@ -81,6 +83,7 @@ void Circuit::register_capacitor(Capacitor *c) {
 void Circuit::register_vin(VoltageIn *vin) {
 	this->vin = vin;
 	register_unknowns(vin->unknowns());
+	vin->map_unknowns(unknowns);
 	components.push_back(vin);
 }
 

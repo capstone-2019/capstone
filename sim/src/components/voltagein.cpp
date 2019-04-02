@@ -23,6 +23,7 @@
 using std::vector;
 using std::string;
 using Eigen::VectorXd;
+using std::unordered_map;
 
 /**
  * @brief Constructs a new voltage input.
@@ -91,6 +92,19 @@ vector<string> VoltageIn::unknowns() {
 }
 
 /**
+ * @brief Pre-computes the mappings from unknown quantities associated with
+ * this component to indices that will be used to construct the KCL matrix.
+ *
+ * @param mappings Hash map which maps string unknown identifiers to
+ * integer unknown IDs.
+ */
+void VoltageIn::map_unknowns(unordered_map<string, int> mappings) {
+	this->n1 = mappings[unknown_voltage(npos)];
+	this->n2 = mappings[unknown_voltage(nneg)];
+	this->ni = mappings[unknown_current("vin")];
+}
+
+/**
  * @brief Fetches the next voltage reading in the input signal.
  *
  * @param voltage A pointer to be filled in with the next voltage, if one
@@ -128,12 +142,6 @@ double VoltageIn::get_sampling_period() {
  */
 void VoltageIn::add_contribution(LinearSystem& sys, VectorXd& soln,
 	VectorXd& prev_soln, double dt) {
-
-	/* find the indices into the matrix for our unknown quantities */
-	vector<string> unknown_variables = unknowns();
-	int ni = sys.unknowns_map[unknown_variables[1]];
-	int n1 = sys.unknowns_map[unknown_voltage(npos)];
-	int n2 = sys.unknowns_map[unknown_voltage(nneg)];
 
 	/* add LHS contribution */
 	sys.increment_lhs(ni, n1, +1);

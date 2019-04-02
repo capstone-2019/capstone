@@ -16,7 +16,7 @@
 #include <stdio.h>
 
 /** @brief Macro to log function/line numbers in the code for debugging */
-#define DBG_LOG fprintf(stderr, "%s:%s\n", __FUNCTION__, __LINE__);
+#define DBG_LOG fprintf(stderr, "%s:%d\n", __FUNCTION__, __LINE__);
 
 /* handles fatal simulator errors by printing a message and exiting */
 void sim_error(const char *fmt, ...);
