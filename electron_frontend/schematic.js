@@ -40,14 +40,13 @@ const fs = require('fs')
 const os = require('os')
 const exec = require('child_process').exec;
 const shell_cmd = require('./shell.js');
-
+const { dialog } = require('electron').remote;
 
 function execute(command, callback) {
     exec(command, (error, stdout, stderr) => { 
         callback(stdout); 
     });
 };
-
 
 
 // set up each schematic entry widget
@@ -191,16 +190,6 @@ schematic = (function() {
             this.toolbar.push(null);  // spacer
         }
 
-        /*
-
-        if (this.edits_allowed) {
-            this.tools['cut'] = this.add_tool(cut_icon,'Cut: move selected components from diagram to the clipboard',this.cut);
-            this.tools['copy'] = this.add_tool(copy_icon,'Copy: copy selected components into the clipboard',this.copy);
-            this.tools['paste'] = this.add_tool(paste_icon,'Paste: copy clipboard into the diagram',this.paste);
-            this.toolbar.push(null);  // spacer
-        }
-        */
-
         // add netlist and circuit export, import to toolbar 
         this.tools['import'] = this.add_tool(import_icon, 'Import: import a circuit from file system', this.import);
         this.enable_tool('import', true);
@@ -212,7 +201,6 @@ schematic = (function() {
         this.tools['run_simulation'] = this.add_tool(help_icon, 'Run Simluation: take the current circuit and simulate a signal through it', this.run_simulation);
         this.enable_tool('run_simulation', true);
         this.toolbar.push(null);
-
 
         // set up diagram canvas
         this.canvas = document.createElement('canvas');
@@ -586,7 +574,11 @@ schematic = (function() {
 
 
     Schematic.prototype.import = function() {
-        // shell.showItemInFolder(os.homedir());
+        console.log(shell_cmd.sayHelloWorld());
+
+
+
+
 
     }
 
@@ -596,7 +588,7 @@ schematic = (function() {
         this.label_connection_points();
         //var netlist = this.json();
         //var str = JSON.stringify(netlist);
-        var netlist = this.json_netlist();
+        var netlist = this.to_netlist();
 
         var result = [];
 
@@ -604,15 +596,39 @@ schematic = (function() {
             if (netlist[i].length > 0) {
                 result.push(netlist[i].join(" "));
             }
-        }
-        
+        };
+
+        dialog.showSaveDialog((filename) => {
+            if (filename === undefined) {
+                console.log("Did not create a file");
+                return;
+            }
+
+            fs.writeFile(filename, result.join('\n'), (err) => {
+                if(err){
+                    console.log("error while creating the file " + err.message);
+                    return;
+                }
+            
+                alert(filename + ' successfully created!');
+            });
+
+        });
+
+
+        /*
         try { fs.writeFileSync('circuit_netlist.txt', result.join("\n"), 'utf-8'); }
         catch(e) { alert(e); }
-
+        */
+        
+        // alert("circuit_netlist.txt successfully created!")
     }
 
     Schematic.prototype.run_simulation = function() {
+        // for testing
         console.log(shell_cmd.sayHelloWorld());
+
+        // TODO: change the generic command to run the circuit simulator
 
         // two ways of executing cmd line args
         // first way spawns a child process; output visible in terminal 
@@ -754,18 +770,18 @@ schematic = (function() {
         return json;
     }
 
-    Schematic.prototype.json_netlist = function() {
+    Schematic.prototype.to_netlist = function() {
         // create the desired netlist for circuit simulator
         var json = [];
 
         var n = this.components.length;
         for (var i = 0; i < n; i++)
-            json.push(this.components[i].json_netlist(i));
+            json.push(this.components[i].to_netlist(i));
 
         return json;
     }
 
-
+/*
     ///////////////////////////////////////////////////////////////////////////////
     //
     //  Simulation interface
@@ -789,27 +805,6 @@ schematic = (function() {
         return null;
     }
 
-    // t is the time at which we want a value
-    // times is a list of timepoints from the simulation
-    function interpolate(t,times,values) {
-        if (values == undefined) return undefined;
-
-        for (var i = 0; i < times.length; i++)
-        if (t < times[i]) {
-            // t falls between times[i-1] and times[i]
-            var t1 = (i == 0) ? times[0] : times[i-1];
-            var t2 = times[i];
-
-            if (t2 == undefined) return undefined;
-
-            var v1 = (i == 0) ? values[0] : values[i-1];
-            var v2 = values[i];
-            var v = v1;
-            if (t != t1) v += (t - t1)*(v2 - v1)/(t2 - t1);
-            return v;
-        }
-    }
-
     // external interface for setting the property value of a named component
     Schematic.prototype.set_property = function(component_name,property,value) {
         this.unselect_all(-1);
@@ -825,7 +820,7 @@ schematic = (function() {
         // update diagram
         this.redraw_background();
     }
-
+*/
     ///////////////////////////////////////////////////////////////////////////////
     //
     //  Drawing support -- deals with scaling and scrolling of diagrama
@@ -1863,7 +1858,7 @@ schematic = (function() {
     }
 
 
-    Component.prototype.json_netlist = function(index) {
+    Component.prototype.to_netlist = function(index) {
         // create a json netlist with the desired specification 
 
         var json = ["# skip this"];
@@ -2427,7 +2422,7 @@ schematic = (function() {
         this.connections[0].propagate_label('0');   // canonical label for GND node
     }
 
-    Ground.prototype.json_netlist = function(index) {
+    Ground.prototype.to_netlist = function(index) {
         var json = ["GROUND"];
         for (var i = 0; i < this.connections.length; i++)
             json.push(this.connections[i].json());
@@ -2518,7 +2513,7 @@ schematic = (function() {
         return new Resistor(x,y,this.rotation,'r',this.properties['r']);
     }
 
-    Resistor.prototype.json_netlist = function(index) {
+    Resistor.prototype.to_netlist = function(index) {
         var json = ["RESISTOR"];
         json.push(this.properties['name']);
         for (var i = 0; i < this.connections.length; i++)
@@ -2569,7 +2564,7 @@ schematic = (function() {
         return new Capacitor(x,y,this.rotation,'c',this.properties['c']);
     }
 
-    Capacitor.prototype.json_netlist = function(index) {
+    Capacitor.prototype.to_netlist = function(index) {
         var json = ["CAPACITOR"];
         json.push(this.properties['name']);
 
@@ -2626,7 +2621,7 @@ schematic = (function() {
         return new Inductor(x,y,this.rotation,'i',this.properties['l']);
     }
 
-    Inductor.prototype.json_netlist = function(index) {
+    Inductor.prototype.to_netlist = function(index) {
         var json = ["INDUCTOR"];
         json.push(this.properties['name']);
 
@@ -2674,7 +2669,7 @@ schematic = (function() {
         return new VIn(x,y,this.rotation,this.properties['name']);
     }
 
-    VIn.prototype.json_netlist = function(index) {
+    VIn.prototype.to_netlist = function(index) {
         var json = ["VOLTAGE_IN"];
         json.push(this.properties['name']);
 
@@ -2722,7 +2717,7 @@ schematic = (function() {
         return new VOut(x,y,this.rotation,this.properties['name']);
     }
 
-    VOut.prototype.json_netlist = function(index) {
+    VOut.prototype.to_netlist = function(index) {
         var json = ["VOLTAGE_OUT"];
         json.push(this.properties['name']);
 
@@ -2732,15 +2727,13 @@ schematic = (function() {
         return json;
     }
 
-
-
     ////////////////////////////////////////////////////////////////////////////////
     //
     //  Diode
     //
     ////////////////////////////////////////////////////////////////////////////////
 
-    function Diode(x,y,rotation,name,area) {
+    function Diode(x,y,rotation,name = 'd',area) {
         Component.call(this,'d',x,y,rotation);
         this.properties['name'] = name + Diode.index;
         this.properties['area'] = area ? area : '1';
@@ -2781,13 +2774,25 @@ schematic = (function() {
         return new Diode(x,y,this.rotation,'d',this.properties['area']);
     }
 
+
+    Diode.prototype.to_netlist = function(index) {
+        var json = ["DIODE"];
+        json.push(this.properties['name']);
+
+        for (var i = 0; i < this.connections.length; i++)
+            json.push(this.connections[i].json());
+        json.push(this.properties['area']);
+
+        return json;
+    }
+
     ////////////////////////////////////////////////////////////////////////////////
     //
     //  N-channel Mosfet
     //
     ////////////////////////////////////////////////////////////////////////////////
 
-    function NFet(x,y,rotation,name,w_over_l) {
+    function NFet(x,y,rotation,name = 'nMOS',w_over_l) {
         Component.call(this,'n',x,y,rotation);
         this.properties['name'] = name + NFet.index;
         this.properties['W/L'] = w_over_l ? w_over_l : '2';
@@ -2834,13 +2839,23 @@ schematic = (function() {
         return new NFet(x,y,this.rotation,'n',this.properties['W/L']);
     }
 
+    NFet.prototype.to_netlist = function(index) {
+        var json = ["PFET"];
+        json.push(this.properties['name']);
+
+        for (var i = 0; i < this.connections.length; i++)
+            json.push(this.connections[i].json());
+        json.push(this.properties['W/L']);
+
+        return json;
+    }
     ////////////////////////////////////////////////////////////////////////////////
     //
     //  P-channel Mosfet
     //
     ////////////////////////////////////////////////////////////////////////////////
 
-    function PFet(x,y,rotation,name = 'p',w_over_l) {
+    function PFet(x,y,rotation,name = 'pMOS',w_over_l) {
         Component.call(this,'p',x,y,rotation);
         this.properties['name'] = name + PFet.index;
         this.properties['W/L'] = w_over_l ? w_over_l : '2';
@@ -2886,6 +2901,17 @@ schematic = (function() {
 
     PFet.prototype.clone = function(x,y) {
         return new PFet(x,y,this.rotation,'p',this.properties['W/L']);
+    }
+
+    PFet.prototype.to_netlist = function(index) {
+        var json = ["NFET"];
+        json.push(this.properties['name']);
+
+        for (var i = 0; i < this.connections.length; i++)
+            json.push(this.connections[i].json());
+        json.push(this.properties['W/L']);
+
+        return json;
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -3136,7 +3162,7 @@ schematic = (function() {
     }
 
 
-    function VSource(x,y,rotation,name,value) {
+    function VSource(x,y,rotation,name = 'Vs',value) {
         Source.call(this,x,y,rotation,name,'v',value);
         this.type = 'v';
     }
@@ -3181,18 +3207,20 @@ schematic = (function() {
         return new VSource(x,y,this.rotation,this.properties['name'],this.properties['value']);
     }
 
-    VSource.prototype.json_netlist = function(index) {
+    VSource.prototype.to_netlist = function(index) {
         var json = ["VOLTAGE_SOURCE"];
         json.push(this.properties['name']);
 
         for (var i = 0; i < this.connections.length; i++)
             json.push(this.connections[i].json());
 
+        json.push(this.properties['value']);
+
         return json;
     }
 
 
-    function ISource(x,y,rotation,name,value) {
+    function ISource(x,y,rotation,name = 'Is',value) {
         Source.call(this,x,y,rotation,name,'i',value);
         this.type = 'i';
     }
@@ -3213,6 +3241,18 @@ schematic = (function() {
 
     ISource.prototype.clone = function(x,y) {
         return new ISource(x,y,this.rotation,this.properties['name'],this.properties['value']);
+    }
+
+    ISource.prototype.to_netlist = function(index) {
+        var json = ["CURRENT_SOURCE"];
+        json.push(this.properties['name']);
+
+        for (var i = 0; i < this.connections.length; i++)
+            json.push(this.connections[i].json());
+
+        json.push(this.properties['value']);
+        
+        return json;
     }
 
     ///////////////////////////////////////////////////////////////////////////////
