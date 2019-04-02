@@ -32,7 +32,7 @@ public:
 	static constexpr const char *IDENTIFIER = "VOLTAGE_IN";
 
 	/* Construct a new VoltageIn */
-	VoltageIn(const std::vector<std::string>& tokens);
+	VoltageIn(const std::vector<std::string>& tokens, const char *sigfile);
 
 	/**
 	 * @brief Destroys a voltage input.

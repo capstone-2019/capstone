@@ -153,19 +153,22 @@ string NetlistIterator::remove_comments(const string& line) {
  *
  * @param netfile The file containing the circuit netlist description.
  */
-NetlistParser::NetlistParser(const char *netfile) {
+NetlistParser::NetlistParser(const char *netfile, const char *sigfile) {
+    input_signal_file = sigfile;
     NetlistIterator ni (netfile);
+
     for (auto it = ni.begin(); it != ni.end(); it++) {
         const string& line = *it;
         vector<string> tokens = tokenize(line);
         if (tokens[0] == "GROUND") {
             ground_id = stoi(tokens[1]);
-            c.register_ground(ground_id);
         }
         else {
             components.push_back(component_from_tokens(tokens));
         }
     }
+
+    c.register_ground(ground_id);
 }
 
 /**
@@ -204,7 +207,7 @@ Component *NetlistParser::component_from_tokens(vector<string> &tokens) {
 
     /* input voltage */
     else if (tokens[0] == VoltageIn::IDENTIFIER) {
-        VoltageIn *vin = new VoltageIn(tokens);
+        VoltageIn *vin = new VoltageIn(tokens, input_signal_file);
         c.register_vin(vin);
         return vin;
     }
@@ -214,12 +217,6 @@ Component *NetlistParser::component_from_tokens(vector<string> &tokens) {
         VoltageOut *vout = new VoltageOut(tokens);
         c.register_vout(vout);
         return vout;
-    }
-
-    /* ground node */
-    else if (tokens[0] == "GROUND") {
-        c.register_ground(stoi(tokens[1]));
-        return NULL;
     }
 
     /* bad identifier */

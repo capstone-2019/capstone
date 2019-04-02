@@ -81,7 +81,7 @@ class NetlistParser
 {
 public:
     /* Create a netlist parser */
-    NetlistParser(const char *netfile);
+    NetlistParser(const char *netfile, const char *sigfile);
     /* Destroy a netlist parser */
     ~NetlistParser();
     /* Get a vector of the circuit components in the netlist */
@@ -95,6 +95,7 @@ public:
     Circuit& as_circuit() { return c; }
 private:
     Component *component_from_tokens(std::vector<std::string>& tokens);
+    const char *input_signal_file;       /**< Filepath to input signal */
     std::vector<Component*> components;  /**< List of components in circuit*/
     int ground_id;                       /**< ID of ground node */
     Circuit c;                           /**< Internal circuit representation */

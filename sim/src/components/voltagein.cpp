@@ -30,11 +30,10 @@ using Eigen::VectorXd;
  * @param tokens The netlist file tokens associated with the voltage
  * input's netlist description.
  */
-VoltageIn::VoltageIn(const vector<string>& tokens) {
+VoltageIn::VoltageIn(const vector<string>& tokens, const char *sigfile) {
 	npos = stoi(tokens[2]);
 	nneg = stoi(tokens[3]);
-	signal_file = tokens[4];
-	std::ifstream sigstream(signal_file);
+	std::ifstream sigstream(sigfile);
 	int iter = 0;
 	string line;
 
