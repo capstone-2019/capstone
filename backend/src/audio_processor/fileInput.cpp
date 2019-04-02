@@ -11,19 +11,39 @@
 #include <fileInput.hpp>
 #include <sndfile.h>
 #include <sndfile.hh>
+#include <iostream>
+#include <fstream>
+#include <string>
 
-FileInput::FileInput(const char *filename) {
+using std::ifstream;
+using std::string;
 
-	SndfileHandle file;
-	file = SndfileHandle(filename);
+FileInput::FileInput(const char *filename, AudioManager::filetype_t file_type) {
 
-	num_frames = file.frames();
-	samplerate = file.samplerate();
+	if (file_type == AudioManager::FILETYPE_WAV) {
+		SndfileHandle file;
+		file = SndfileHandle(filename);
 
-	frames.resize(num_frames);
-	file.read(&frames.front(), num_frames);
+		num_frames = file.frames();
+		samplerate = file.samplerate();
 
-	cur_index = 0;
+		frames.resize(num_frames);
+		file.read(&frames.front(), num_frames);
+
+		cur_index = 0;
+	} else if (file_type == AudioManager::FILETYPE_TXT) {
+		ifstream file(filename);
+		string line;
+
+		getline(file, line);
+		samplerate = (int) (1.f / stod(line));
+
+		while (getline(file, line)) {
+			frames.push_back(stod(line));
+		}
+		num_frames = frames.size();
+	}
+	
 
 }
 

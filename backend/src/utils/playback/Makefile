@@ -1,5 +1,6 @@
 PROJ = playback
 CC = g++
+TOP = ../../../
 
 CFLAGS = -c -O2 -g -Wall
 LDFLAGS = -L/opt/local/lib -L$(HOME)/cppunit/lib
@@ -14,7 +15,8 @@ DOCS_DIR = doc
 all: $(PROJ)
 
 $(PROJ): $(OBJS)
-		$(CC) $(LIBS) $^ -o $@ $(VAR)
+		$(eval OBJS_LOC = $(TOP)$@)
+		$(CC) $(LIBS) $^ -o $(OBJS_LOC) $(VAR)
 
 %.o: %.cpp
 		$(CC) $(CFLAGS) $< -o $@
