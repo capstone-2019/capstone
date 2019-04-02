@@ -48,7 +48,6 @@ function execute(command, callback) {
     });
 };
 
-
 // set up each schematic entry widget
 function update_schematics() {
     // set up each schematic on the page
@@ -255,11 +254,12 @@ schematic = (function() {
         this.select_rect = undefined;
         this.wire = undefined;
 
+
         this.operating_point = undefined;  // result from DC analysis
         this.dc_results = undefined;   // saved analysis results for submission
         this.ac_results = undefined;   // saved analysis results for submission
         this.transient_results = undefined;   // saved analysis results for submission
-
+ 
         // state of modifier keys
         this.ctrlKey = false;
         this.shiftKey = false;
@@ -347,8 +347,10 @@ schematic = (function() {
         this.input.parentNode.insertBefore(toplevel,this.input.nextSibling);
 
         // process initial contents of diagram
-        this.load_schematic(this.input.getAttribute('value'),
-                            this.input.getAttribute('initial_value'));
+        
+        this.load_schematic(this.input.getAttribute('value'));
+                            //);
+        
     }
 
     part_w = 50;   // size of a parts bin compartment
@@ -576,12 +578,13 @@ schematic = (function() {
     Schematic.prototype.import = function() {
         console.log(shell_cmd.sayHelloWorld());
 
+        var success = false;
+
         dialog.showOpenDialog((filenames) => {
             if (filenames === undefined) {
                 console.log("no file selected");
                 return;
             }
-            console.log(filenames);
 
             fs.readFile(filenames[0], 'utf-8', (err, data) => {
                 if (err) {
@@ -589,11 +592,20 @@ schematic = (function() {
                     return;
                 }
                 console.log(data);
-
+                
                 alert("successfully imported " + filenames[0]);
+
+                for (var i = this.components.length - 1; i >=0; --i) {
+                    var c = this.components[i];
+                    c.remove();
+                }
+
+                this.load_schematic(data);
+                this.redraw_background();
 
             });
         });
+        // this.redraw_background();
 
     }
 
@@ -630,11 +642,13 @@ schematic = (function() {
         });
 
 
-        /*
-        try { fs.writeFileSync('circuit_netlist.txt', result.join("\n"), 'utf-8'); }
+        // also save the structure for import purposes
+        var json_version = this.json();
+        var str = JSON.stringify(json_version);
+
+        try { fs.writeFileSync('circuit_json.txt', str, 'utf-8'); }
         catch(e) { alert(e); }
-        */
-        
+
         // alert("circuit_netlist.txt successfully created!")
     }
 
@@ -664,14 +678,12 @@ schematic = (function() {
     ////////////////////////////////////////////////////////////////////////////////
 
     // load diagram from JSON representation
-    Schematic.prototype.load_schematic = function(value,initial_value) {
-        // use default value if no schematic info in value
-        if (value == undefined || value.indexOf('[') == -1)
-        value = initial_value;
-        
+    Schematic.prototype.load_schematic = function(value) {
         if (value && value.indexOf('[') != -1) {
         // convert string value into data structure
         var json = JSON.parse(value);
+        console.log(value);
+        console.log(json);
 
         // top level is a list of components
         for (var i = json.length - 1; i >= 0; --i) {
@@ -688,23 +700,16 @@ schematic = (function() {
                 this.tran_npts = c[8];
                 this.tran_tstop = c[9];
                 this.dc_max_iters = c[10];
-                } else if (c[0] == 'w') {
+            } else if (c[0] == 'w') {
                 // wire
                 this.add_wire(c[1][0],c[1][1],c[1][2],c[1][3]);
-            } else if (c[0] == 'dc') {
-                this.dc_results = c[1];
-            } else if (c[0] == 'transient') {
-                this.transient_results = c[1];
-            } else if (c[0] == 'ac') {
-                this.ac_results = c[1];
             } else {
             // ordinary component
-            //  c := [type, coords, properties, connections]
-            var type = c[0];
-            var coords = c[1];
-            var properties = c[2];
+            //  c := [_, type, coords, properties, connections]
+            var type = c[1];
+            var coords = c[2];
+            var properties = c[3];
 
-            // make the part
             var part = new parts_map[type][0](coords[0],coords[1],coords[2]);
 
             // give it its properties
