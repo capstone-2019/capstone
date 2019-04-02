@@ -42,6 +42,11 @@ public:
 	/** @brief returns the samplerate */
 	int get_samplerate(){ return samplerate; };
 
+	/** @brief returns the next voltage */
+	bool get_next_value(float *val);
+	/** @brief resets the current index back to zero */
+	void reset_index() { cur_index = 0; }
+
 	/** @brief saves the file as a cso file */
 	void save(const char* filename);
 
@@ -50,13 +55,17 @@ public:
 		return frames[i];
 	}
 
-private:
 	/** @brief vector containing frame data */
 	std::vector<float> frames;
+
+private:
+	
 	/** @brief samplerate of the file */
 	int samplerate;
 	/** @brief number of frames the file contains */
 	int num_frames;
+	/** @brief index get_next_value will serve */
+	int cur_index;
 };
 
 #endif /* _FILEINPUT_H_ */

@@ -20,8 +20,10 @@ FileInput::FileInput(const char *filename) {
 	num_frames = file.frames();
 	samplerate = file.samplerate();
 
-	frames.reserve(num_frames);
+	frames.resize(num_frames);
 	file.read(&frames.front(), num_frames);
+
+	cur_index = 0;
 
 }
 
@@ -37,3 +39,15 @@ void FileInput::save(const char *filename) {
 
 	fclose(outfile);
 }
+
+bool FileInput::get_next_value(float *val) {
+	if (cur_index >= num_frames) {
+		return false;
+	}
+	*val = frames[cur_index++];
+	return true;
+}
+
+
+
+
