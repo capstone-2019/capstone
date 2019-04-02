@@ -197,9 +197,12 @@ schematic = (function() {
         this.toolbar.push(null);  // spacer
  
         // add run_simulation to toolbar
-        this.tools['run_simulation'] = this.add_tool(help_icon, 'Run Simluation: take the current circuit and simulate a signal through it', this.run_simulation);
+        this.tools['run_simulation'] = this.add_tool(simulate_icon, 'Run Simluation: take the current circuit and simulate a signal through it', this.run_simulation);
         this.enable_tool('run_simulation', true);
-        this.toolbar.push(null);
+
+        this.tools['play'] = this.add_tool(play_icon, 'Play: Listen to a sound passed through a simulated circuit', this.play);
+        this.enable_tool('play', true);
+        this.toolbar.push(null); 
 
         // set up diagram canvas
         this.canvas = document.createElement('canvas');
@@ -625,8 +628,8 @@ schematic = (function() {
 
         dialog.showSaveDialog((filename) => {
             if (filename === undefined) {
-                return;
                 console.log("Did not create a file");
+                return;
             }
 
             fs.writeFile(filename, result.join('\n'), (err) => {
@@ -651,22 +654,41 @@ schematic = (function() {
 
     Schematic.prototype.run_simulation = function() {
         // for testing
-        console.log(shell_cmd.sayHelloWorld());
+        this.enable_tool('run_simulation', false);
 
+        console.log(shell_cmd.sayHelloWorld());
 
         const options_signal = {
             message: 'Please select a signal file'
         };
+
         const options_netlist = {
             message: 'Please select a netlist file (.nls)'
         };
 
         dialog.showMessageBox(null, options_signal);
         var signal_files = dialog.showOpenDialog();
+
+        if (signal_files === undefined) {
+            this.enable_tool('run_simulation', true);
+            console.log('no signal file chosen');
+            return;
+        }
+
         console.log(signal_files[0]);
+
+        // TODO: change this to be a question type message.
+        // let the user choose to upload a file or do live audio
 
         dialog.showMessageBox(null, options_netlist);
         var netlist_files = dialog.showOpenDialog();
+
+        if (netlist_files === undefined) {
+            this.enable_tool('run_simulation', true);
+            console.log('no netlist file chosen');
+            return;
+        }
+
         console.log(netlist_files[0]);
 
         // change var command to change the cmd line command ran
@@ -676,8 +698,6 @@ schematic = (function() {
         shell_cmd.exec(command, (output) => {
             console.log(output);
         });
-
-        // shell_cmd.exec('./csim -c ' + netlist_files[0] + ' -s ' + signal_files[0] + '--plot');
 
         // two ways of executing cmd line args
         // first way spawns a child process; output visible in terminal 
@@ -689,6 +709,41 @@ schematic = (function() {
         execute('python test.py 3 4', (output) => {
             console.log(output);
         })
+
+
+        this.enable_tool('run_simulation', true);
+    }
+
+
+
+    Schematic.prototype.play = function() {
+
+        this.enable_tool('play', false);
+
+        console.log(shell_cmd.sayHelloWorld());
+
+        const options = {
+            message: 'Please select a circuit simulator output file (.cso)'
+        };
+
+        dialog.showMessageBox(null, options);
+        var cso_file = dialog.showOpenDialog();
+
+        if (cso_file === undefined) {
+            this.enable_tool('play', true);
+            console.log('no cso file chosen');
+            return;
+        }
+        console.log(cso_file[0]);
+
+        var command = './playback ' + cso_file;
+        console.log(command);
+
+        shell_cmd.exec(command, (output) => {
+            console.log(output);
+        });
+
+        this.enable_tool('play', true);
 
     }
     ///////////////////////////////////////////////////////////////////////////////
@@ -1568,7 +1623,7 @@ schematic = (function() {
         if (icon.search('png') != -1 || icon.search('data:image') != -1) {
             tool = document.createElement('img');
             tool.src = icon;
-            tool.width = 15;
+            tool.width = 18;
         } else {
             tool = document.createElement('span');
             tool.style.font = 'small-caps small sans-serif';
@@ -1650,11 +1705,15 @@ schematic = (function() {
 
 
     // icons were taken from flaticon.com
-    help_icon = 'images/help.png'  // freepik from flaticon.com
+    help_icon = 'images/help.png'           // freepik from flaticon.com
 
-    export_icon = 'images/export.png'  // Chanut from flaticon.com
+    export_icon = 'images/export.png'       // Chanut from flaticon.com
 
-    import_icon = 'images/import.png'  // Chanut from flaticon.com
+    import_icon = 'images/import.png'       // Chanut from flaticon.com
+
+    play_icon = 'images/play.png'           // freepik from flaticon.com
+
+    simulate_icon = 'images/simulate.png'   // Payungkead from flaticon.com
 
     close_icon = 'data:image/gif;base64,R0lGODlhEAAQAMQAAGtra/f3/62tre/v9+bm787O1pycnHNzc6WlpcXFxd7e3tbW1nt7e7W1te/v74SEhMXFzmNjY+bm5v///87OzgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAAAAAAALAAAAAAQABAAAAVt4DRMZGmSwRQQBUS9MAwRIyQ5Uq7neEFSDtxOF4T8cobIQaE4RAQ5yjHHiCCSD510QtFGvoCFdppDfBu7bYzy+D7WP5ggAgA8Y3FKwi5IAhIweW1vbBGEWy5rilsFi2tGAwSJixAFBCkpJ5ojIQA7';
 
