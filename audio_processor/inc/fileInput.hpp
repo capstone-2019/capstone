@@ -55,11 +55,9 @@ public:
 		return frames[i];
 	}
 
+private:
 	/** @brief vector containing frame data */
 	std::vector<float> frames;
-
-private:
-	
 	/** @brief samplerate of the file */
 	int samplerate;
 	/** @brief number of frames the file contains */
