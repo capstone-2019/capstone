@@ -257,7 +257,8 @@ int main(int argc, char *argv[]) {
     vector<double> output_signal;
 
     parse_command_line(argc, argv, &params);
-    NetlistParser parser(params.circuit_file, params.signal_file);
+    NetlistParser parser(params.circuit_file, params.signal_file,
+        params.outfile);
 
     /* launch the plotting script if the user requested it */
     if (params.plot)

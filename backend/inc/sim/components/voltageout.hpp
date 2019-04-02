@@ -15,6 +15,7 @@
 #include <vector>
 #include <string>
 #include <linsys.hpp>
+#include <audio_manager.hpp>
 
 /**
  * @brief Class to contain the functionality for the VoltageOut component
@@ -28,7 +29,7 @@ public:
 	static constexpr const char *IDENTIFIER = "VOLTAGE_OUT";
 
 	/* Construct a new VoltageIn */
-	VoltageOut(const std::vector<std::string>& tokens);
+	VoltageOut(const std::vector<std::string>& tokens, AudioManager *am);
 
 	/**
 	 * @brief Destroys a voltage input.
@@ -44,6 +45,8 @@ public:
 private:
 	int npos;  /**< Positive terminal */
 	int nneg;  /**< Negative terminal */
+
+	AudioManager am; /**< Where we report output voltages to */
 };
 
 #endif /* _VOLTAGE_OUT_H_ */

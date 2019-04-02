@@ -31,38 +31,11 @@ using std::unordered_map;
  * @param tokens The netlist file tokens associated with the voltage
  * input's netlist description.
  */
-VoltageIn::VoltageIn(const vector<string>& tokens, const char *sigfile) {
+VoltageIn::VoltageIn(const vector<string>& tokens, AudioManager *am) {
 	npos = stoi(tokens[2]);
 	nneg = stoi(tokens[3]);
-	std::ifstream sigstream(sigfile);
-	int iter = 0;
-	string line;
-
-	/* open signal file for reading */
-	if (!sigstream.good())
-		sim_error("Could not open signal file %s", signal_file.c_str());
-
-	/* parse line by line */
-	while (getline(sigstream, line)) {
-
-		std::istringstream iss(line);
-		double voltage;
-
-		/* first line contains sampling period, rest contain voltages */
-		if (iter == 0 && !(iss >> sample_period))
-			sim_error("Could not read sampling period from signal file");
-
-		else if (iter > 0 && !(iss >> voltage))
-			sim_error("Bad voltage on line %d - %s", iter+1, line.c_str());
-
-		/* record the voltage */
-		if (iter > 0)
-			voltages.push_back(voltage);
-
-		iter++;
-	}
-
-	vit = voltages.begin();
+	sample_period = am->get_sampling_period();
+	this->am = am;
 }
 
 /**
@@ -115,13 +88,9 @@ void VoltageIn::map_unknowns(unordered_map<string, int> mappings) {
  * undefined.
  */
 bool VoltageIn::next_voltage(double *voltage) {
-	if (vit == voltages.end())
-		return false;
-
-	*voltage = *vit;
-	this->V = *vit;
-	vit++;
-	return true;
+	bool ret = am->get_next_value(voltage);
+	this->V = *voltage;
+	return ret;
 }
 
 /**
