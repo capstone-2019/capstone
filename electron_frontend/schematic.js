@@ -138,8 +138,6 @@ schematic = (function() {
         if (this.origin_y == undefined) this.origin_y = 0;
 
 
-        this.edits_allowed = true;
-
         var parts = new Array();
         for (var p in parts_map) parts.push(p); 
 
@@ -152,35 +150,19 @@ schematic = (function() {
             this.parts_bin.push(part);
         }
 
-        // use user-supplied list of analyses, otherwise provide them all
-        // analyses="" means no analyses
-        var analyses = input.getAttribute('analyses');
-        if (analyses == undefined || analyses == 'None')
-            analyses = ['dc','ac','tran'];
-        else if (analyses == '') analyses = [];
-        else analyses = analyses.split(',');
+        // TODO: remove these lines
+        this.edits_allowed = true;
+        var analyses = [];
+        this.diagram_only = false;
 
-        if (parts.length == 0 && analyses.length == 0) this.diagram_only = true;
-        else this.diagram_only = false;
-
-        // see what we need to submit.  Expecting attribute of the form
-        // submit_analyses="{'tran':[[node_name,t1,t2,t3],...],
-        //                   'ac':[[node_name,f1,f2,...],...]}"
-        var submit = input.getAttribute('submit_analyses');
-        if (submit && submit.indexOf('{') != -1)
-            this.submit_analyses = JSON.parse(submit);
-        else
-            this.submit_analyses = undefined;
 
         // toolbar
         this.tools = new Array();
         this.toolbar = [];
 
-        if (!this.diagram_only) {
-            this.tools['help'] = this.add_tool(help_icon,'Help: display help page',this.help);
-            this.enable_tool('help',true);
-            this.toolbar.push(null);  // spacer
-        }
+        this.tools['help'] = this.add_tool(help_icon,'Help: display help page',this.help);
+        this.enable_tool('help',true);
+        this.toolbar.push(null);  // spacer
 
         // add netlist and circuit export, import to toolbar 
         this.tools['import'] = this.add_tool(import_icon, 'Import: import a circuit from file system', this.import);
@@ -189,13 +171,13 @@ schematic = (function() {
         this.enable_tool('export', true);
         this.toolbar.push(null);  // spacer
  
-        // add run_simulation to toolbar
+        // add run_simulation and play to toolbar
         this.tools['run_simulation'] = this.add_tool(simulate_icon, 'Run Simluation: take the current circuit and simulate a signal through it', this.run_simulation);
         this.enable_tool('run_simulation', true);
-
         this.tools['play'] = this.add_tool(play_icon, 'Play: Listen to a sound passed through a simulated circuit', this.play);
         this.enable_tool('play', true);
         this.toolbar.push(null); 
+
 
         // set up diagram canvas
         this.canvas = document.createElement('canvas');
@@ -211,33 +193,29 @@ schematic = (function() {
         this.bg_image.width = this.width;
         this.bg_image.height = this.height;
 
-        if (!this.diagram_only) {
-            this.canvas.tabIndex = 1; // so we get keystrokes
-            this.canvas.style.borderStyle = 'solid';
-            this.canvas.style.borderWidth = '0px';
-            this.canvas.style.borderColor = grid_style;
-            this.canvas.style.outline = 'none';
-        }
+        this.canvas.tabIndex = 1; // so we get keystrokes
+        this.canvas.style.borderStyle = 'solid';
+        this.canvas.style.borderWidth = '0px';
+        this.canvas.style.borderColor = grid_style;
+        this.canvas.style.outline = 'none';
+        
 
         this.canvas.schematic = this;
-        if (this.edits_allowed) {
-            this.canvas.addEventListener('mousemove',schematic_mouse_move,false);
-            this.canvas.addEventListener('mouseover',schematic_mouse_enter,false);
-            this.canvas.addEventListener('mouseout',schematic_mouse_leave,false);
-            this.canvas.addEventListener('mousedown',schematic_mouse_down,false);
-            this.canvas.addEventListener('mouseup',schematic_mouse_up,false);
-            this.canvas.addEventListener('dblclick',schematic_double_click,false);
-            this.canvas.addEventListener('keydown',schematic_key_down,false);
-            this.canvas.addEventListener('keyup',schematic_key_up,false);
-        }
+        this.canvas.addEventListener('mousemove',schematic_mouse_move,false);
+        this.canvas.addEventListener('mouseover',schematic_mouse_enter,false);
+        this.canvas.addEventListener('mouseout',schematic_mouse_leave,false);
+        this.canvas.addEventListener('mousedown',schematic_mouse_down,false);
+        this.canvas.addEventListener('mouseup',schematic_mouse_up,false);
+        this.canvas.addEventListener('dblclick',schematic_double_click,false);
+        this.canvas.addEventListener('keydown',schematic_key_down,false);
+        this.canvas.addEventListener('keyup',schematic_key_up,false);
+        
 
         // set up message area
-        if (!this.diagram_only) {
-            this.status_div = document.createElement('div');
-            this.status = document.createTextNode('');
-            this.status_div.appendChild(this.status);
-            this.status_div.style.height = status_height + 'px';
-        } else this.status_div = undefined;
+        this.status_div = document.createElement('div');
+        this.status = document.createTextNode('');
+        this.status_div.appendChild(this.status);
+        this.status_div.style.height = status_height + 'px';
 
         this.connection_points = new Array();  // location string => list of cp's
         this.components = [];
@@ -270,13 +248,12 @@ schematic = (function() {
         var table,tr,td;
         table = document.createElement('table');
         table.rules = 'none';
-        if (!this.diagram_only) {
-            table.frame = 'box';
-            table.style.borderStyle = 'solid';
-            table.style.borderWidth = '0px';
-            table.style.borderColor = normal_style;
-            table.style.backgroundColor = background_style;
-        }
+        table.frame = 'box';
+        table.style.borderStyle = 'solid';
+        table.style.borderWidth = '0px';
+        table.style.borderColor = normal_style;
+        table.style.backgroundColor = background_style;
+        
 
         // add tools to DOM
         if (this.toolbar.length > 0) {
@@ -325,14 +302,13 @@ schematic = (function() {
             }
         }
 
-        if (this.status_div != undefined) {
-            tr = document.createElement('tr');
-            table.appendChild(tr);
-            td = document.createElement('td');
-            tr.appendChild(td);
-            td.colSpan = 2;
-            td.appendChild(this.status_div);
-        }
+        tr = document.createElement('tr');
+        table.appendChild(tr);
+        td = document.createElement('td');
+        tr.appendChild(td);
+        td.colSpan = 2;
+        td.appendChild(this.status_div);
+
 
         // add to dom
         // avoid Chrome bug that changes to text cursor whenever
@@ -342,10 +318,9 @@ schematic = (function() {
         toplevel.appendChild(table);
         this.input.parentNode.insertBefore(toplevel,this.input.nextSibling);
 
+
         // process initial contents of diagram
-        
         this.load_schematic(this.input.getAttribute('value'));
-                            //);
         
     }
 
@@ -729,7 +704,6 @@ schematic = (function() {
         execute('python test.py 3 4', (output) => {
             console.log(output);
         })
-
 
         this.enable_tool('run_simulation', true);
     }
