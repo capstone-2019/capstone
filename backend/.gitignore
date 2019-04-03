@@ -1,0 +1,10 @@
+# Compilation artifacts
+csim
+playback
+*.o
+doc/
+.gch
+
+# vim stuff
+*.swo
+*.swp

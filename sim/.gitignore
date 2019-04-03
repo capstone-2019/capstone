@@ -1,8 +1,0 @@
-# Compilation artifacts
-csim
-*.o
-doc/
-
-# vim stuff
-*.swo
-*.swp
