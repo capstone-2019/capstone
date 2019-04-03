@@ -29,8 +29,8 @@ using Eigen::VectorXd;
  * of this component.
  */
 VoltageOut::VoltageOut(const vector<string>& tokens, AudioManager *am) {
-	npos = stod(tokens[2]);
-	nneg = stod(tokens[3]);
+	npos = stoi(tokens[2]);
+	nneg = stoi(tokens[3]);
 	this->am = am;
 }
 
