@@ -8,3 +8,7 @@ doc/
 # vim stuff
 *.swo
 *.swp
+
+#other files
+.wav
+.cso

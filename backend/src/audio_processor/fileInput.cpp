@@ -27,8 +27,12 @@ FileInput::FileInput(const char *filename, AudioManager::filetype_t file_type) {
 		num_frames = file.frames();
 		samplerate = file.samplerate();
 
-		frames.resize(num_frames);
-		file.read(&frames.front(), num_frames);
+		channels = file.channels();
+		frames.resize(num_frames*channels);
+		int n = file.read(&frames.front(), channels*num_frames);
+
+		// std::cout << "n " << n << "\n";
+		// std::cout << "channels " << channels << "\n";
 
 		cur_index = 0;
 	} else if (file_type == AudioManager::FILETYPE_TXT) {
@@ -65,7 +69,12 @@ bool FileInput::get_next_value(float *val) {
 	if (cur_index >= num_frames) {
 		return false;
 	}
-	*val = frames[cur_index++];
+	float tmp = 0.f;
+	float inv = 1.f / channels;
+	for (int i = 0; i < channels; i++) {
+		tmp += inv * frames[cur_index++];
+	}
+	*val = tmp;
 	return true;
 }
 

@@ -66,6 +66,8 @@ private:
 	int num_frames;
 	/** @brief index get_next_value will serve */
 	int cur_index;
+	/** @brief the number of channels the input file had */
+	int channels;
 };
 
 #endif /* _FILEINPUT_H_ */

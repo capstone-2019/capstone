@@ -10,6 +10,7 @@
 #include "portaudio.h"
 
 #define FRAMES_PER_BUFFER (512)
+#define TARGET_AMPLITUDE (10)
 
 
 typedef struct {
@@ -88,7 +89,18 @@ float* parse_input(const char* filename, int* samplerate, int* num_frames) {
 
 	float* frames = new float[*num_frames];
 	int i = 0;
-	while (fscanf(f, "%f,", &frames[i++]) > 0);
+	float max = 0;
+	while (fscanf(f, "%f,", &frames[i++]) > 0) {
+		float tmp = frames[i-1];
+		if (tmp < 0) tmp *= -1;
+		if (tmp > max) max = tmp;
+	}
+
+	/* normalize */
+	float scale = TARGET_AMPLITUDE / max;
+	for (int i = 0; i < *num_frames; i++) {
+		frames[i] *= scale;
+	}
 
 	printf("read input with %d frames at a samplerate of %d\n", *num_frames, *samplerate);
 
