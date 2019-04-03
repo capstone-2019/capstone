@@ -196,7 +196,6 @@ schematic = (function() {
         this.canvas.style.borderWidth = '0px';
         this.canvas.style.borderColor = grid_style;
         this.canvas.style.outline = 'none';
-        
 
         this.canvas.schematic = this;
         this.canvas.addEventListener('mousemove',schematic_mouse_move,false);
@@ -208,6 +207,8 @@ schematic = (function() {
         this.canvas.addEventListener('keydown',schematic_key_down,false);
         this.canvas.addEventListener('keyup',schematic_key_up,false);
         
+        // test
+        // this.play_file = 'file_not_chosen.cso';
 
         // set up message area
         this.status_div = document.createElement('div');
@@ -555,8 +556,6 @@ schematic = (function() {
                 }
                 console.log(data);
                 
-                alert("successfully imported " + filenames[0]);
-
                 for (var i = this.components.length - 1; i >=0; --i) {
                     var c = this.components[i];
                     c.remove();
@@ -634,7 +633,7 @@ schematic = (function() {
             message: 'Please select a signal file'
         };
         const options_output = {
-            message: 'Select and output location'
+            message: 'Please select an output location'
         };
         const options_netlist = {
             message: 'Please select a netlist file (.nls), or select live audio',
@@ -653,6 +652,17 @@ schematic = (function() {
 
         console.log(signal_files[0]);
 
+        dialog.showMessageBox(null, options_output);
+        var output_file = dialog.showSaveDialog();
+
+        if (output_file === undefined) {
+            this.enable_tool('run_simulation', true);
+            console.log('no output file chosen');
+            return;
+        }
+
+        // this.play_file = output_file;
+
         // let the user choose to upload a file or do live audio
 
         var choice = dialog.showMessageBox(null, options_netlist);
@@ -668,10 +678,10 @@ schematic = (function() {
             }
 
             console.log(netlist_files[0]);
-            var command = '../backend/csim -c ' + netlist_files[0] + ' -s ' + signal_files[0] + ' --plot';
+            var command = '../backend/csim -c ' + netlist_files[0] + ' -s ' + signal_files[0] + ' -o ' + output_file + ' --plot';
 
         } else {
-            var command = '../backend/csim -s ' + signal_files[0] + ' --live --plot';
+            var command = '../backend/csim -s ' + signal_files[0] + ' -o ' + output_file + ' --live --plot';
         }
 
         // change var command to change the cmd line command ran
@@ -700,6 +710,7 @@ schematic = (function() {
         this.enable_tool('play', false);
 
         console.log(shell_cmd.sayHelloWorld());
+        // console.log(this.play_file);
 
         const options = {
             message: 'Please select a circuit simulator output file (.cso)'
@@ -715,7 +726,7 @@ schematic = (function() {
         }
         console.log(cso_file[0]);
 
-        var command = './playback ' + cso_file;
+        var command = '../backend/playback ' + cso_file;
         console.log(command);
 
         shell_cmd.exec(command, (output) => {
