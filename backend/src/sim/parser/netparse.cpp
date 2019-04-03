@@ -53,7 +53,8 @@ static vector<string> tokenize(const std::string& s, const char *delims = " ")
 }
 
 static AudioManager::filetype_t get_filetype(const string& fname) {
-    if (fname.substr(fname.find_last_of(".") + 1) == "wav")
+    string extension = fname.substr(fname.find_last_of(".") + 1);
+    if (extension == "wav" || extension == "ogg")
         return AudioManager::FILETYPE_WAV;
     return AudioManager::FILETYPE_TXT;
 }
