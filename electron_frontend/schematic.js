@@ -104,7 +104,6 @@ schematic = (function() {
     // list of all the defined parts
     parts_map = {
         'g': [Ground, 'Ground connection'],
-        // 'L': [Label, 'Node label'],
         'v': [VSource, 'Voltage source'],
         'i': [ISource, 'Current source'],
         'r': [Resistor, 'Resistor'],
@@ -138,17 +137,11 @@ schematic = (function() {
         this.origin_y = input.getAttribute("origin_y");
         if (this.origin_y == undefined) this.origin_y = 0;
 
-        // use user-supplied list of parts if supplied
-        // else just populate parts bin with all the parts
+
         this.edits_allowed = true;
-        var parts = input.getAttribute('parts');
-        if (parts == undefined || parts == 'None') {
-            parts = new Array();
-            for (var p in parts_map) parts.push(p);
-        } else if (parts == '') {
-            this.edits_allowed = false;
-            parts = [];
-        } else parts = parts.split(',');
+
+        var parts = new Array();
+        for (var p in parts_map) parts.push(p); 
 
         // now add the parts to the parts bin
         this.parts_bin = [];
@@ -646,9 +639,7 @@ schematic = (function() {
             if(err){
                 console.log("error while creating the file " + err.message);
                 return;
-            }
-        
-            alert(filename + ' successfully created!');
+            }        
         });
 
         dialog.showMessageBox(null, options_structure);
@@ -665,9 +656,7 @@ schematic = (function() {
             if(err){
                 console.log("error while creating the file " + err.message);
                 return;
-            }
-        
-            alert(filename + ' successfully created!');
+            }        
         });
 
     }
