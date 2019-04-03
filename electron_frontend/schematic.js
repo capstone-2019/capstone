@@ -151,8 +151,6 @@ schematic = (function() {
         }
 
         // TODO: remove these lines
-        this.edits_allowed = true;
-        var analyses = [];
         this.diagram_only = false;
 
 
@@ -229,11 +227,6 @@ schematic = (function() {
         this.wire = undefined;
 
 
-        this.operating_point = undefined;  // result from DC analysis
-        this.dc_results = undefined;   // saved analysis results for submission
-        this.ac_results = undefined;   // saved analysis results for submission
-        this.transient_results = undefined;   // saved analysis results for submission
- 
         // state of modifier keys
         this.ctrlKey = false;
         this.shiftKey = false;
@@ -451,7 +444,6 @@ schematic = (function() {
     }
 
     Schematic.prototype.unselect_all = function(which) {
-        this.operating_point = undefined;  // remove annotations
 
         for (var i = this.components.length - 1; i >= 0; --i)
             if (i != which) this.components[i].set_select(false);
@@ -545,7 +537,6 @@ schematic = (function() {
         this.redraw();
     }
 
-
     Schematic.prototype.import = function() {
         console.log(shell_cmd.sayHelloWorld());
 
@@ -579,7 +570,6 @@ schematic = (function() {
 
     }
 
-
     // creates two files: the netlist file for circuit sim, and circuit file for import
     Schematic.prototype.export = function() {
         // give all the circuit nodes a name, extract netlist
@@ -598,7 +588,6 @@ schematic = (function() {
         const options_netlist = {
             message: 'Please select a location for the netlist file'
         };
-
         const options_structure = {
             message: 'Please select a location for the structure file (for import)'
         };
@@ -644,11 +633,9 @@ schematic = (function() {
         const options_signal = {
             message: 'Please select a signal file'
         };
-
         const options_output = {
             message: 'Select and output location'
-        }
-
+        };
         const options_netlist = {
             message: 'Please select a netlist file (.nls), or select live audio',
             type: 'question',
@@ -708,8 +695,6 @@ schematic = (function() {
         this.enable_tool('run_simulation', true);
     }
 
-
-
     Schematic.prototype.play = function() {
 
         this.enable_tool('play', false);
@@ -749,46 +734,39 @@ schematic = (function() {
     // load diagram from JSON representation
     Schematic.prototype.load_schematic = function(value) {
         if (value && value.indexOf('[') != -1) {
-        // convert string value into data structure
-        var json = JSON.parse(value);
-        console.log(value);
-        console.log(json);
+            // convert string value into data structure
+            var json = JSON.parse(value);
+            console.log(value);
+            console.log(json);
 
-        // top level is a list of components
-        for (var i = json.length - 1; i >= 0; --i) {
-            var c = json[i];
-            if (c[0] == 'view') {
-                // special hack: view component lets us recreate view
-                this.origin_x = c[1];
-                this.origin_y = c[2];
-                this.scale = c[3];
-                this.ac_npts = c[4];
-                this.ac_fstart = c[5];
-                this.ac_fstop = c[6];
-                this.ac_source_name = c[7];
-                this.tran_npts = c[8];
-                this.tran_tstop = c[9];
-                this.dc_max_iters = c[10];
-            } else if (c[0] == 'w') {
-                // wire
-                this.add_wire(c[1][0],c[1][1],c[1][2],c[1][3]);
-            } else {
-            // ordinary component
-            //  c := [_, type, coords, properties, connections]
-            var type = c[1];
-            var coords = c[2];
-            var properties = c[3];
+            // top level is a list of components
+            for (var i = json.length - 1; i >= 0; --i) {
+                var c = json[i];
+                if (c[0] == 'view') {
+                    // special hack: view component lets us recreate view
+                    this.origin_x = c[1];
+                    this.origin_y = c[2];
+                    this.scale = c[3];
+                } else if (c[0] == 'w') {
+                    // wire
+                    this.add_wire(c[1][0],c[1][1],c[1][2],c[1][3]);
+                } else {
+                // ordinary component
+                //  c := [_, type, coords, properties, connections]
+                var type = c[1];
+                var coords = c[2];
+                var properties = c[3];
 
-            var part = new parts_map[type][0](coords[0],coords[1],coords[2]);
+                var part = new parts_map[type][0](coords[0],coords[1],coords[2]);
 
-            // give it its properties
-            for (var name in properties)
-                part.properties[name] = properties[name];
+                // give it its properties
+                for (var name in properties)
+                    part.properties[name] = properties[name];
 
-            // add component to the diagram
-            part.add(this);
+                // add component to the diagram
+                part.add(this);
+                }
             }
-        }
         }
 
         // see what we've got!
@@ -850,10 +828,7 @@ schematic = (function() {
             json.push(this.components[i].json(i));
 
         // capture the current view parameters
-        json.push(['view',this.origin_x,this.origin_y,this.scale,
-               this.ac_npts,this.ac_fstart,this.ac_fstop,
-               this.ac_source_name,this.tran_npts,this.tran_tstop,
-               this.dc_max_iters]);
+        json.push(['view',this.origin_x,this.origin_y,this.scale]);
 
         return json;
     }
@@ -886,7 +861,6 @@ schematic = (function() {
         c.fillStyle = element_style;
         c.fillRect(0,0,this.width,this.height);
 
-        if (!this.diagram_only) {
         // grid
         c.strokeStyle = grid_style;
         var first_x = 0;
@@ -897,7 +871,7 @@ schematic = (function() {
             this.draw_line(c,i,first_y,i,last_y,0.1);
         for (var i = first_y; i < last_y; i += this.grid)
             this.draw_line(c,first_x,i,last_x,i,0.1);
-        }
+        
 
         // unselected components
         for (var i = this.components.length - 1; i >= 0; --i) {
@@ -918,11 +892,11 @@ schematic = (function() {
         // selected components
         var selections = false;
         for (var i = this.components.length - 1; i >= 0; --i) {
-        var component = this.components[i];
-        if (component.selected) {
-            component.draw(c);
-            selections = true;
-        }
+            var component = this.components[i];
+            if (component.selected) {
+                component.draw(c);
+                selections = true;
+            }
         }
         this.enable_tool('cut',selections);
         this.enable_tool('copy',selections);
@@ -930,57 +904,37 @@ schematic = (function() {
 
         // connection points: draw one at each location
         for (var location in this.connection_points) {
-        var cplist = this.connection_points[location];
-        cplist[0].draw(c,cplist.length);
+            var cplist = this.connection_points[location];
+            cplist[0].draw(c,cplist.length);
         }
     
         // draw new wire
         if (this.wire) {
-        var r = this.wire;
-        c.strokeStyle = selected_style;
-        this.draw_line(c,r[0],r[1],r[2],r[3],1);
+            var r = this.wire;
+            c.strokeStyle = selected_style;
+            this.draw_line(c,r[0],r[1],r[2],r[3],1);
         }
 
         // draw selection rectangle
         if (this.select_rect) {
-        var r = this.select_rect;
-        c.lineWidth = 1;
-        c.strokeStyle = selected_style;
-        c.beginPath();
-        c.moveTo(r[0],r[1]);
-        c.lineTo(r[0],r[3]);
-        c.lineTo(r[2],r[3]);
-        c.lineTo(r[2],r[1]);
-        c.lineTo(r[0],r[1]);
-        c.stroke();
-        }
-    
-        // display operating point results
-        if (this.operating_point) {
-        if (typeof this.operating_point == 'string')
-            this.message(this.operating_point);
-        else {
-            // make a copy of the operating_point info so we can mess with it
-            var temp = new Array();
-            for (var i in this.operating_point) temp[i] = this.operating_point[i];
-
-            // run through connection points displaying (once) the voltage
-            // for each electrical node
-            for (var location in this.connection_points)
-            (this.connection_points[location])[0].display_voltage(c,temp);
-
-            // let components display branch current info if available
-            for (var i = this.components.length - 1; i >= 0; --i)
-            this.components[i].display_current(c,temp)
-        }
+            var r = this.select_rect;
+            c.lineWidth = 1;
+            c.strokeStyle = selected_style;
+            c.beginPath();
+            c.moveTo(r[0],r[1]);
+            c.lineTo(r[0],r[3]);
+            c.lineTo(r[2],r[3]);
+            c.lineTo(r[2],r[1]);
+            c.lineTo(r[0],r[1]);
+            c.stroke();
         }
         
         // finally overlay cursor
         if (this.drawCursor && this.draw_cursor) {
-        //var x = this.cursor_x;
-        //var y = this.cursor_y;
-        //this.draw_text(c,'('+x+','+y+')',x+this.grid,y-this.grid,10);
-        this.draw_cursor(c,this.cursor_x,this.cursor_y);
+            //var x = this.cursor_x;
+            //var y = this.cursor_y;
+            //this.draw_text(c,'('+x+','+y+')',x+this.grid,y-this.grid,10);
+            this.draw_cursor(c,this.cursor_x,this.cursor_y);
         }
     }
 
