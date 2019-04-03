@@ -2422,6 +2422,8 @@ schematic = (function() {
         Component.prototype.draw.call(this,c);   // give superclass a shot
         this.draw_line(c,0,0,0,8);
         this.draw_line(c,-6,8,6,8);
+        this.draw_line(c, -4, 12, 4, 12);
+        this.draw_line(c, -2, 16, 2, 16);
     }
 
     Ground.prototype.clone = function(x,y) {
