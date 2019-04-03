@@ -280,7 +280,6 @@ int main(int argc, char *argv[]) {
     double elapsed_s = static_cast<float>(elapsed_ms) / MS_TO_S;
     cout << "Transient analysis finished in " << elapsed_s << " secs." << endl;
 
-
     /* Pass data into plotting script, wait for plotter to complete */
     if (params.plot) {
 

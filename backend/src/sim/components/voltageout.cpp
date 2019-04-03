@@ -21,6 +21,7 @@
 using std::vector;
 using std::string;
 using Eigen::VectorXd;
+using std::unordered_map;
 
 /**
  * @brief Constructs a voltage output.
@@ -48,6 +49,19 @@ string VoltageOut::to_string() {
 	return vout_string.str();
 }
 
+vector<string> VoltageOut::unknowns() {
+	vector<string> unknown_variables = {
+		unknown_voltage(npos),
+		unknown_voltage(nneg)
+	};
+	return unknown_variables;
+}
+
+void VoltageOut::map_unknowns(unordered_map<string, int> mappings) {
+	this->npid = mappings[unknown_voltage(npos)];
+	this->nnid = mappings[unknown_voltage(nneg)];
+}
+
 /**
  * @brief Measures the voltage across the output terminals.
  *
@@ -57,8 +71,6 @@ string VoltageOut::to_string() {
  * the circuit in volts.
  */
 double VoltageOut::measure(LinearSystem& sys, VectorXd& soln) {
-	int npid = sys.unknowns_map[unknown_voltage(npos)];
-	int nnid = sys.unknowns_map[unknown_voltage(nneg)];
 	double npos_voltage = soln(npid);
 	double nneg_voltage = soln(nnid);
 	double vout = npos_voltage - nneg_voltage;

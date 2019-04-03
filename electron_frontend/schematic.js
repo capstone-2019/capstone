@@ -717,10 +717,10 @@ schematic = (function() {
             }
 
             console.log(netlist_files[0]);
-            var command = './csim -c ' + netlist_files[0] + ' -s ' + signal_files[0] + ' --plot';
+            var command = '../backend/csim -c ' + netlist_files[0] + ' -s ' + signal_files[0] + ' --plot';
 
         } else {
-            var command = './csim -s ' + signal_files[0] + ' --live --plot';
+            var command = '../backend/csim -s ' + signal_files[0] + ' --live --plot';
         }
 
         // change var command to change the cmd line command ran

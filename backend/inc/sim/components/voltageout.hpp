@@ -16,6 +16,7 @@
 #include <string>
 #include <linsys.hpp>
 #include <audio_manager.hpp>
+#include <unordered_map>
 
 /**
  * @brief Class to contain the functionality for the VoltageOut component
@@ -42,9 +43,16 @@ public:
 	/* Measure the potential difference across output terminals */
 	double measure(LinearSystem& sys, Eigen::VectorXd& soln);
 
+	std::vector<std::string> unknowns() override;
+	/* map unknowns into matrix indices in a linear system */
+	void map_unknowns(std::unordered_map<std::string, int> mapping) override;
+
 private:
 	int npos;  /**< Positive terminal */
 	int nneg;  /**< Negative terminal */
+
+	int npid;
+	int nnid;
 
 	AudioManager *am; /**< Where we report output voltages to */
 };

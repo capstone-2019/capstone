@@ -96,6 +96,8 @@ void Circuit::register_vin(VoltageIn *vin) {
  */
 void Circuit::register_vout(VoltageOut *vout) {
 	this->vout = vout;
+	register_unknowns(vout->unknowns());
+	vout->map_unknowns(unknowns);
 }
 
 /**

@@ -59,6 +59,7 @@ string VoltageIn::to_string() {
 vector<string> VoltageIn::unknowns() {
 	vector<string> unknown_variables = {
 		unknown_voltage(npos),
+		unknown_voltage(nneg),
 		unknown_current("vin")
 	};
 	return unknown_variables;
