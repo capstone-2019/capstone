@@ -123,6 +123,7 @@ static int launch_plotter() {
         (char *) "-f",
         (char *) "sin",
         (char *) "--plot",
+        NULL,
     };
 
     if (pipe(plotter_fd) < 0)
@@ -151,7 +152,8 @@ static int launch_plotter() {
         execvp(plotter_args[0], plotter_args);
 
         /* SHOULD NEVER REACH HERE! */
-        sim_error("%s:%d - execvp() failed!", __FUNCTION__, __LINE__);
+        sim_error("%s:%d - execvp() failed with error %s",
+            __FUNCTION__, __LINE__, strerror(errno));
 
     }
     else if (pid < 0) {

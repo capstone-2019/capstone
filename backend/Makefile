@@ -4,7 +4,7 @@ TARGET = csim
 # the C++ compiler to use
 CC = g++
 
-SRC_DIRS = src 
+SRC_DIRS = src
 INC_DIRS = inc/sim inc/sim/eigen inc/audio_processor
 EXCLUDE_DIRS = src/utils
 
@@ -20,7 +20,7 @@ OBJ = $(SRC:%.cpp=%.o)
 # compiler/linker flags
 INC_FLAGS = $(addprefix -I, $(INC_DIRS))
 STANDARD_FLAGS = -std=c++17
-CPP_FLAGS = $(INC_FLAGS) $(STANDARD_FLAGS)
+CPP_FLAGS = $(INC_FLAGS) $(STANDARD_FLAGS) -O3
 LDFLAGS = -lsndfile -lportaudio
 
 # automatic documentation generation
