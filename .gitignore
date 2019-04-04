@@ -3,3 +3,4 @@
 *.o
 __pycache__
 electron_frontend/node_modules
+.vscode
