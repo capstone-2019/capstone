@@ -79,25 +79,6 @@ void sim_error(const char *fmt, ...) {
 }
 
 /**
- * @brief Logs the command line parameters for debugging.
- *
- * @param params Struct containing parsed command line arguments.
- */
-void simparams_log(simparams_t *params) {
-    const char *ofile = (params->outfile) ? params->outfile : "NONE";
-    const char *sfile = (params->signal_file) ? params->signal_file : "NONE";
-    const char *cfile = (params->circuit_file) ? params->circuit_file : "NONE";
-    const char *plot = (params->plot) ? "TRUE" : "FALSE";
-
-    cout << "Parse Results:"    << endl
-         << "Circuit File: "    << cfile << endl
-         << "Signal File: "     << sfile  << endl
-         << "Output file: "     << ofile << endl
-         << "Enable Plotting: " << plot
-         << endl;
-}
-
-/**
  * @brief Runs a Python script to plot the results of the circuit simulator
  * using Matplotlib.
  *
@@ -176,10 +157,12 @@ static int launch_plotter() {
  * @param argv The argument vector used to invoke this program.
  */
 static void usage(char *argv[]) {
-    const char *usage_string = "-c CIRCUIT_NETLIST -s SIGNAL_FILE";
+    const char *usage_string = "-c CIRCUIT_NETLIST -s SIGNAL_FILE -o OUTFILE";
     fprintf(stderr, "Usage: %s %s\n", argv[0], usage_string);
     fprintf(stderr, "\t-c [--circuit]   Circuit netlist file to simulate\n");
     fprintf(stderr, "\t-s [--signal]    Input signal source\n");
+    fprintf(stderr, "\t-o [--outfile]   Output audio file\n");
+    fprintf(stderr, "\t[--plot]         Plot the results after simulation\n");
     exit(EXIT_FAILURE);
 }
 
