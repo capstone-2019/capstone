@@ -26,5 +26,6 @@
 #include <components/capacitor.hpp>
 #include <components/voltagein.hpp>
 #include <components/voltageout.hpp>
+#include <components/diode.hpp>
 
 #endif /* _COMPONENT_H_ */
