@@ -31,37 +31,31 @@ FileInput::FileInput(const char *filename, AudioManager::filetype_t file_type) {
 		frames.resize(num_frames*channels);
 		int n = file.read(&frames.front(), channels*num_frames);
 
-		// std::cout << "n " << n << "\n";
-		// std::cout << "channels " << channels << "\n";
-
 		cur_index = 0;
-	} else if (file_type == AudioManager::FILETYPE_TXT) {
+	}
+	else if (file_type == AudioManager::FILETYPE_TXT) {
 		ifstream file(filename);
 		string line;
 
 		getline(file, line);
 		samplerate = (int) (1.f / stod(line));
+		channels = 1;
 
 		while (getline(file, line)) {
 			frames.push_back(stod(line));
 		}
+
 		num_frames = frames.size();
 		cur_index = 0;
 	}
-
-
 }
 
 void FileInput::save(const char *filename) {
 
 	FILE* outfile = fopen(filename, "w");
-
-	fprintf(outfile, "%d\n%d\n", samplerate, num_frames);
-
 	for (auto it = frames.begin(); it < frames.end(); it++) {
 		fprintf(outfile, "%f,", *it);
 	}
-
 	fclose(outfile);
 }
 

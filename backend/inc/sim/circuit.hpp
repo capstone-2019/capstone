@@ -44,6 +44,7 @@ public:
 	void register_ground(int ground_id);
 	void register_resistor(Resistor *r);
 	void register_capacitor(Capacitor *c);
+	void register_diode(Diode *d);
 	void register_vin(VoltageIn *vin);
 	void register_vout(VoltageOut *vout);
 
