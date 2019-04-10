@@ -33,7 +33,7 @@ using Eigen::VectorXd;
  * @param tokens Space delimited tokens from the line in the netfile
  * describing this diode instance.
  */
-Diode::Diode(const std::vector<std::string>& tokens) {
+Diode::Diode(const vector<string>& tokens) {
     npos = stoi(tokens[2]);
     nneg = stoi(tokens[3]);
     N = 1.5;
@@ -109,4 +109,3 @@ void Diode::add_contribution(LinearSystem& sys, VectorXd& soln,
     sys.increment_rhs(n1, -current_val);
     sys.increment_rhs(n2, +current_val);
 }
-
