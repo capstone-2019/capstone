@@ -73,6 +73,12 @@ void Circuit::register_capacitor(Capacitor *c) {
 	components.push_back(c);
 }
 
+void Circuit::register_diode(Diode *d) {
+	register_unknowns(d->unknowns());
+	d->map_unknowns(unknowns);
+	components.push_back(d);
+}
+
 /**
  * @brief Adds a new voltage input to the circuit.
  *

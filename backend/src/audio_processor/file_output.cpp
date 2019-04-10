@@ -42,9 +42,5 @@ void FileOutput::finish() {
 		for (int i = 0; i < num_frames; i++) {
 			outfile << frames[i] << ",";
 		}
-
-	} else {
-		std::cout << "unable to open file.\n";
 	}
-
 }
