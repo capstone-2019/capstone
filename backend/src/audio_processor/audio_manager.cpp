@@ -35,10 +35,17 @@ static int callBack(const void *inputBuffer, void *outputBuffer,
 		cv.notify_one();
 	}
 
+	if (data->out) {
+		if (data->hw_output_buf.size() >= 2) {
+			memcpy(outputBuffer, &data->hw_output_buf.front(), framesPerBuffer * sizeof(float));
+			data->hw_output_buf.pop();
+		}
+	}
+
 	return !data->done ? 0 : paComplete;
 }
 
-static PaStream* portaudio_init_input(AudioManager::callback_data *data) {
+static PaStream* portaudio_init_hw(AudioManager::callback_data *data) {
 
 	// parameters for the output
 	PaStream *stream;
@@ -46,13 +53,20 @@ static PaStream* portaudio_init_input(AudioManager::callback_data *data) {
 	inputParameters.device = Pa_GetDefaultInputDevice();
 	inputParameters.channelCount = 1;
 	inputParameters.sampleFormat = paFloat32;
-	inputParameters.suggestedLatency = Pa_GetDeviceInfo(inputParameters.device)->defaultLowOutputLatency;
+	inputParameters.suggestedLatency = Pa_GetDeviceInfo(inputParameters.device)->defaultLowInputLatency;
     inputParameters.hostApiSpecificStreamInfo = NULL;
+
+    PaStreamParameters outputParameters;
+	outputParameters.device = Pa_GetDefaultOutputDevice();
+	outputParameters.channelCount = 1;
+	outputParameters.sampleFormat = paFloat32;
+	outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
+	outputParameters.hostApiSpecificStreamInfo = NULL;
 
 	int err = Pa_OpenStream(
 				&stream,
-				&inputParameters,
-				NULL, /* no output */
+				data->in ? &inputParameters : NULL,
+				data->out ? &outputParameters : NULL,
 				data->samplerate,
 				HW_FRAMES_PER_BUFFER,
 				paClipOff,
@@ -60,7 +74,7 @@ static PaStream* portaudio_init_input(AudioManager::callback_data *data) {
 				data);
 
 	if (err != paNoError) {
-		printf("Error while opening stream\n");
+		printf("Error while opening stream (%d)\n", err);
 		return NULL;
 	}
 
@@ -78,6 +92,7 @@ AudioManager::AudioManager(input_t input_mode, output_t output_mode,
 	data->in = false;
 	data->out = false;
 	data->done = false;
+	this->output_mode = output_mode;
 
 	/* initialize input */
 	/* TODO: Support hardware modes things */
@@ -91,10 +106,6 @@ AudioManager::AudioManager(input_t input_mode, output_t output_mode,
 		data->num_frames = 0;
 		// TODO: support multi channel?
 		data->in = true;
-		stream = portaudio_init_input(data);
-		if (Pa_StartStream(stream) != paNoError) {
-			printf("Error while starting stream\n");
-		}
 	}
 	else if (input_mode == INPUT_FILE) {
 		FileInput *fi = new FileInput(input_filename, infile_type);
@@ -106,20 +117,29 @@ AudioManager::AudioManager(input_t input_mode, output_t output_mode,
 		assert(false);
 	}
 
-
-
 	fout = NULL;
 	/* initialize outputs */
 	if (output_mode & OUTPUT_FILE) {
 		fout = new FileOutput(output_filename, data->samplerate);
 	}
 	if (output_mode & OUTPUT_HARDWARE) {
-		std::cerr << "mode not yet supported\n";
-		assert(false);
+		data->out = true;
+		data->samplerate = HW_SAMPLERATE;
+		output_index = 0;
+		// std::cerr << "mode not yet supported\n";
+		// assert(false);
 	}
 
 	data->input_index = 0;
 	data->num_frames_read = 0;
+
+	/* initialize portaudio */
+	if (input_mode == INPUT_HARDWARE || output_mode & OUTPUT_HARDWARE) {
+		stream = portaudio_init_hw(data);
+		if (Pa_StartStream(stream) != paNoError) {
+			printf("Error while starting stream\n");
+		}
+	}
 }
 
 bool AudioManager::file_get_next_value(double *val) {
@@ -169,17 +189,31 @@ bool AudioManager::get_next_value(double *val) {
 	return false;
 }
 
-void AudioManager::set_next_value(double val) {
+void AudioManager::file_set_next_value(double val) {
 	if (fout != NULL)
 		fout->set_next_value(val);
 }
+
+void AudioManager::hw_set_next_value(double val) {
+	temp_out_buffer.buf[output_index++] = (float) val;
+
+	if (output_index == HW_FRAMES_PER_BUFFER) {
+		data->hw_output_buf.emplace(temp_out_buffer);
+		output_index = 0;
+	}
+}
+
+void AudioManager::set_next_value(double val) {
+	if (output_mode & OUTPUT_FILE) file_set_next_value(val);
+	if (output_mode & OUTPUT_HARDWARE) hw_set_next_value(val);
+}	
 
 void AudioManager::finish() {
 	if (fout != NULL) {
 		fout->finish();
 	}
 
-	if (input_mode == INPUT_HARDWARE) {
+	if (input_mode == INPUT_HARDWARE || output_mode == OUTPUT_HARDWARE) {
 		data->done = true;
 		Pa_StopStream(stream);
 		Pa_CloseStream(stream);

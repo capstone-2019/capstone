@@ -65,6 +65,7 @@ public:
 	};
 	typedef struct {
 		std::queue<buffer> hw_input_buf;
+		std::queue<buffer> hw_output_buf;
 		// std::vector<std::queue<buffer>> hw_input_buf;
 		// std::vector<std::queue<buffer>> hw_output_buf;
 		int input_index;
@@ -90,6 +91,12 @@ private:
 
 	bool hw_get_next_value(double *val);
 	bool file_get_next_value(double *val);
+	void hw_set_next_value(double val);	
+	void file_set_next_value(double val);
+
+	buffer temp_out_buffer;
+	int output_index;
+	output_t output_mode;
 
 
 };
