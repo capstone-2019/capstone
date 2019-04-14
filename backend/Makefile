@@ -17,6 +17,11 @@ EXCLUDES = $(shell find $(EXCLUDE_DIRS) -name *.cpp)
 SRC = $(filter-out $(EXCLUDES), $(shell find $(SRC_DIRS) -name *.cpp))
 OBJ = $(SRC:%.cpp=%.o)
 
+# test files
+SIM_FILE = src/sim/sim.cpp
+TEST_SRC = $(filter-out $(SIM_FILE), $(SRC)) test/hw_input.cpp
+TEST_OBJ = $(TEST_SRC:%.cpp=%.o)
+
 # compiler/linker flags
 INC_FLAGS = $(addprefix -I, $(INC_DIRS))
 STANDARD_FLAGS = -std=c++17
@@ -31,6 +36,9 @@ DOCS_DIR = doc
 # build the top-level executable
 $(TARGET): $(OBJ)
 	$(CC) $(OBJ) -o $@ $(LDFLAGS)
+
+test_hw: $(TEST_OBJ)
+	$(CC) $(TEST_OBJ) -o $@ $(LDFLAGS)
 
 utils:
 	make -C src/utils/playback/ all

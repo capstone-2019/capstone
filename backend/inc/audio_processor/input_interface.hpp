@@ -1,6 +1,6 @@
 /** @file input_interface.hpp
  *
- *	@brief implements the InputInterface class, which serves as the parent
+ *	@brief the API for the InputInterface class, which serves as the parent
  *	to different implementations for an audio interface.
  *
  *	@author Joseph Kim

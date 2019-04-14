@@ -3,7 +3,7 @@ csim
 playback
 *.o
 doc/
-.gch
+*.gch
 
 # vim stuff
 *.swo
