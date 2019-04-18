@@ -12,6 +12,13 @@
 
 #include <input_interface.hpp>
 #include <file_output.hpp>
+#include <queue>
+
+#include "portaudio.h"
+
+#define HW_FRAMES_PER_BUFFER 512
+#define HW_SAMPLERATE 44100
+#define NUM_CHANNELS 2
 
 class AudioManager
 {
@@ -25,6 +32,7 @@ public:
 	typedef enum {
 		FILETYPE_WAV,
 		FILETYPE_TXT,
+		FILETYPE_NONE,
 	} filetype_t;
 
 	static constexpr const int OUTPUT_FILE = 1;
@@ -49,10 +57,27 @@ public:
 	/** @brief sets the next value. */
 	void set_next_value(double val);
 
-	double get_sampling_period() { return 1.0 / input_samplerate; }
+	double get_sampling_period() { return 1.0 / data->samplerate; }
 
 	/** @brief flush the values into a file */
 	void finish();
+
+	struct buffer {
+		float buf[HW_FRAMES_PER_BUFFER];
+	};
+	typedef struct {
+		std::queue<buffer> hw_input_buf;
+		std::queue<buffer> hw_output_buf;
+		// std::vector<std::queue<buffer>> hw_input_buf;
+		// std::vector<std::queue<buffer>> hw_output_buf;
+		int input_index;
+		int num_frames;
+		int samplerate;
+		volatile int num_frames_read; // only used by hw
+		bool in;
+		bool out;
+		bool done;
+	} callback_data;
 
 private:
 
@@ -60,9 +85,21 @@ private:
 	FileOutput *fout;
 
 	/** @brief used for file inputs */
-	int input_index;
-	int input_samplerate;
-	int input_num_frames;
+	// int input_samplerate;
+
+	callback_data *data;
+	input_t input_mode;
+	PaStream *stream;
+
+	bool hw_get_next_value(double *val);
+	bool file_get_next_value(double *val);
+	void hw_set_next_value(double val);	
+	void file_set_next_value(double val);
+
+	buffer temp_out_buffer;
+	int output_index;
+	output_t output_mode;
+
 
 };
 

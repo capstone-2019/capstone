@@ -1,9 +1,10 @@
 # Compilation artifacts
 csim
 playback
+test_hw
 *.o
 doc/
-.gch
+*.gch
 
 # vim stuff
 *.swo

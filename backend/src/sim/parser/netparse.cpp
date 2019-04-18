@@ -20,6 +20,8 @@
 #include <parser/netparser.hpp>
 #include <iostream>
 #include <components/component.hpp>
+#include <errors.hpp>
+#include <sim.hpp>
 
 using std::vector;
 using std::string;
@@ -152,6 +154,38 @@ string NetlistIterator::remove_comments(const string& line) {
 }
 
 /****************************************************************************
+ *                          NetlistParser Helpers                           *
+ ****************************************************************************/
+
+
+
+static AudioManager::input_t get_input_source(simparams_t *params) {
+    
+    if (params->outfile != NULL) {
+        return AudioManager::INPUT_FILE;
+    } else if (params->live_output) {
+        return AudioManager::INPUT_HARDWARE;
+    } else {
+        sim_error("invalid input parameters\n");
+        return AudioManager::INPUT_FILE;
+    }
+}
+
+static AudioManager::output_t get_outputs(simparams_t *params) {
+
+    AudioManager::output_t ret = 0;
+
+    if (params->signal_file != NULL) {
+        ret |= AudioManager::OUTPUT_FILE;
+    }
+
+    if (params->live_output) {
+        ret |= AudioManager::OUTPUT_HARDWARE;
+    }
+
+    return ret;
+}
+/****************************************************************************
  *                              NetlistParser                               *
  ****************************************************************************/
 
@@ -160,20 +194,28 @@ string NetlistIterator::remove_comments(const string& line) {
  *
  * @param netfile The file containing the circuit netlist description.
  */
-NetlistParser::NetlistParser(const char *netfile, const char *sigfile,
-    const char *outfile) {
+NetlistParser::NetlistParser(simparams_t *params) {
+
+    const char *netfile = params->circuit_file;
+    const char *sigfile = params->signal_file;
+    const char *outfile = params->outfile;
 
     /**
      * Construct the AudioManager for the circuit simulation.
      *
      * @bug THIS WILL NOT WORK FOR LIVE AUDIO.
      */
+    AudioManager::input_t input_source = get_input_source(params);
+    AudioManager::output_t output_source = get_outputs(params);
+    AudioManager::filetype_t filetype = input_source == AudioManager::INPUT_FILE ? 
+                                        get_filetype(sigfile) : 
+                                        AudioManager::FILETYPE_NONE;
     this->am = new AudioManager(
-        AudioManager::INPUT_FILE,
-        AudioManager::OUTPUT_FILE,
+        input_source,
+        output_source,
         sigfile,
         outfile,
-        get_filetype(sigfile));
+        filetype);
 
     input_signal_file = sigfile;
     NetlistIterator ni (netfile);

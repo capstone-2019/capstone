@@ -10,7 +10,7 @@
 #include "portaudio.h"
 
 #define FRAMES_PER_BUFFER (512)
-#define TARGET_AMPLITUDE (10)
+#define TARGET_AMPLITUDE (1)
 
 
 typedef struct {

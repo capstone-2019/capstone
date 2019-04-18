@@ -47,6 +47,7 @@ FileInput::FileInput(const char *filename, AudioManager::filetype_t file_type) {
 
 		num_frames = frames.size();
 		cur_index = 0;
+		channels = 1;
 	}
 }
 

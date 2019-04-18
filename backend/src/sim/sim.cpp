@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <chrono>
+#include <sim.hpp>
 
 using Eigen::MatrixXd;
 using Eigen::Upper;
@@ -35,16 +36,6 @@ using std::string;
 extern char **environ;
 
 /**
- * @brief Struct used to store command line arguments to the simulator.
- */
-typedef struct {
-    const char *circuit_file;  /**< Path to circuit netlist */
-    const char *signal_file;   /**< Input signal source */
-    bool plot;                 /**< Whether to plot the output signal */
-    const char *outfile;
-} simparams_t;
-
-/**
  * @brief File descriptors for pipe used to communicate with plotting
  * script if plotting is enabled.
  */
@@ -57,7 +48,8 @@ static int plotter_fd[2];
  * plotting mode has been chose
  */
 #define ENABLE_PLOTTING 0xff
-#define LIVE_AUDIO 0x13
+#define LIVE_INPUT 0x13
+#define LIVE_OUTPUT 0x69
 
 /** @brief Ratio to convert milliseconds to seconds */
 #define MS_TO_S 1000
@@ -159,10 +151,13 @@ static int launch_plotter() {
 static void usage(char *argv[]) {
     const char *usage_string = "-c CIRCUIT_NETLIST -s SIGNAL_FILE -o OUTFILE";
     fprintf(stderr, "Usage: %s %s\n", argv[0], usage_string);
-    fprintf(stderr, "\t-c [--circuit]   Circuit netlist file to simulate\n");
-    fprintf(stderr, "\t-s [--signal]    Input signal source\n");
+    fprintf(stderr, "\t-c [--circuit]     Circuit netlist file to simulate\n");
+    fprintf(stderr, "\t-s [--signal]      Input signal source\n");
     fprintf(stderr, "\t-o [--outfile]   Output audio file\n");
+    fprintf(stderr, "\t   [--live-input]  Use live input\n");
+    fprintf(stderr, "\t   [--live-output] Play signal as it's being processed\n");
     fprintf(stderr, "\t[--plot]         Plot the results after simulation\n");
+
     exit(EXIT_FAILURE);
 }
 
@@ -186,7 +181,8 @@ void parse_command_line(int argc, char *argv[], simparams_t *params) {
         {"help",    no_argument,       0, 'h' },
         {"circuit", required_argument, 0, 'c' },
         {"signal",  required_argument, 0, 's' },
-        {"live",    no_argument,       0, LIVE_AUDIO },
+        {"live-input",    no_argument,       0, LIVE_INPUT },
+        {"live-output",    no_argument,       0, LIVE_OUTPUT },
         {"outfile", required_argument, 0, 'o' },
         {"plot",    no_argument,       0, ENABLE_PLOTTING },
     };
@@ -211,6 +207,12 @@ void parse_command_line(int argc, char *argv[], simparams_t *params) {
             case ENABLE_PLOTTING:
                 params->plot = true;
                 break;
+            case LIVE_INPUT:
+                params->live_input = true;
+                break;
+            case LIVE_OUTPUT:
+                params->live_output = true;
+                break;
             case 'h':
                 usage(argv);
                 break;
@@ -221,7 +223,8 @@ void parse_command_line(int argc, char *argv[], simparams_t *params) {
     }
 
     /* user must specify these options */
-    if (params->circuit_file == NULL || params->signal_file == NULL) {
+    if (params->circuit_file == NULL || 
+        (params->signal_file == NULL && !params->live_input)) {
         usage(argv);
     }
 }
@@ -242,8 +245,7 @@ int main(int argc, char *argv[]) {
     vector<double> output_signal;
 
     parse_command_line(argc, argv, &params);
-    NetlistParser parser(params.circuit_file, params.signal_file,
-        params.outfile);
+    NetlistParser parser(&params);
 
     /* launch the plotting script if the user requested it */
     if (params.plot)
