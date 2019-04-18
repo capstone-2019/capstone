@@ -53,39 +53,69 @@ function update_schematics() {
     // set up each schematic on the page
     var schematics = document.getElementsByClassName('schematic');
     for (var i = 0; i < schematics.length; ++i)
-    if (schematics[i].getAttribute("loaded") != "true") {
-        try {
-        new schematic.Schematic(schematics[i]);
-        } catch (err) {
-        var msgdiv = document.createElement('div');
-        msgdiv.style.border = 'thick solid #FF0000';
-        msgdiv.style.margins = '20px';
-        msgdiv.style.padding = '20px';
-        var msg = document.createTextNode('Sorry, there a browser error in starting the schematic tool.  The tool is known to be compatible with the latest versions of Firefox and Chrome, which we recommend you use.');
-        msgdiv.appendChild(msg);
-        schematics[i].parentNode.insertBefore(msgdiv,schematics[i]);
+        if (schematics[i].getAttribute("loaded") != "true") {
+            try {
+                new schematic.Schematic(schematics[i]);
+            } catch (err) {
+                var msgdiv = document.createElement('div');
+                msgdiv.style.border = 'thick solid #FF0000';
+                msgdiv.style.margins = '20px';
+                msgdiv.style.padding = '20px';
+                var msg = document.createTextNode('Sorry, there a browser error in starting the schematic tool.  The tool is known to be compatible with the latest versions of Firefox and Chrome, which we recommend you use.');
+                msgdiv.appendChild(msg);
+                schematics[i].parentNode.insertBefore(msgdiv,schematics[i]);
+            }
+            schematics[i].setAttribute("loaded","true");
         }
-        schematics[i].setAttribute("loaded","true");
+}
+
+function manage_project() {
+    const select = {
+        message: 'Start a new project or open an existing project?',
+        type: 'question',
+        buttons: ['New Project', 'Select Project']
+    };
+
+    var choice = dialog.showMessageBox(null, select);
+
+    // choice == 0 if user wants to start a new project 
+    if (choice == 0) {
+        var folder = dialog.showSaveDialog();
+
+        if (folder === undefined) {
+            console.log('no project folder chosen');
+            return;
+        }
+
+        console.log(choice);
+        console.log(folder);
+        window.projectFolder = folder;
+
+        var command = "mkdir " + folder;
+        shell_cmd.exec(command, (output) => {
+            console.log(output);
+        });
+
+    } else {
+       
+        schematic.import();
     }
 }
+
 
 // add ourselves to the tasks that get performed when window is loaded
 function add_schematic_handler(other_onload) {
     return function() {
-    // execute othe onload functions first
-    if (other_onload) other_onload();
+        // execute othe onload functions first
+        if (other_onload) other_onload();
+    
+        update_schematics();
+        manage_project();
 
-    update_schematics();
     }
 }
 window.onload = add_schematic_handler(window.onload);
 
-// ask each schematic input widget to update its value field for submission
-function prepare_schematics() {
-    var schematics = document.getElementsByClassName('schematic');
-    for (var i = schematics.length - 1; i >= 0; i--)
-    schematics[i].schematic.update_value();
-}
 
 schematic = (function() {
     background_style = 'rgb(136,210,242)';
@@ -207,9 +237,6 @@ schematic = (function() {
         this.canvas.addEventListener('keydown',schematic_key_down,false);
         this.canvas.addEventListener('keyup',schematic_key_up,false);
         
-        // test
-        // this.play_file = 'file_not_chosen.cso';
-
         // set up message area
         this.status_div = document.createElement('div');
         this.status = document.createTextNode('');
@@ -237,6 +264,7 @@ schematic = (function() {
         // make sure other code can find us!
         input.schematic = this;
         this.input = input;
+        window.schematic = this;
 
         // set up DOM -- use nested tables to do the layout
         var table,tr,td;
@@ -311,10 +339,6 @@ schematic = (function() {
         toplevel.onselectstart = function(){ return false; };
         toplevel.appendChild(table);
         this.input.parentNode.insertBefore(toplevel,this.input.nextSibling);
-
-
-        // process initial contents of diagram
-        this.load_schematic(this.input.getAttribute('value'));
         
     }
 
@@ -534,38 +558,57 @@ schematic = (function() {
             new_c.add(this);
         }
 
-        // see what we've wrought
+        // see what we've added
         this.redraw();
     }
 
-    Schematic.prototype.import = function() {
-        console.log(shell_cmd.sayHelloWorld());
 
-        var success = false;
+    Schematic.prototype.import_circuit = function() {
+        console.log(window.projectFolder);
+        var filename = window.projectFolder + '/circuit.txt';
 
-        dialog.showOpenDialog((filenames) => {
-            if (filenames === undefined) {
-                console.log("no file selected");
+        fs.readFile(filename, 'utf-8', (err, data) => {
+            if (err) {
+                console.log("file does not exist / not importing", err);
+                this.redraw_background();
                 return;
             }
+            console.log(data);
 
-            fs.readFile(filenames[0], 'utf-8', (err, data) => {
-                if (err) {
-                    console.log("error reading file ", err);
-                    return;
-                }
-                console.log(data);
-                
+            console.log(this);
+            if (this.components !== undefined) {
                 for (var i = this.components.length - 1; i >=0; --i) {
                     var c = this.components[i];
                     c.remove();
                 }
+            } 
+            
 
-                this.load_schematic(data);
-                this.redraw_background();
+            this.load_schematic(data);
+            this.redraw_background();
 
-            });
         });
+    }
+
+
+
+    Schematic.prototype.import = function() {
+
+        console.log("hi im importing");
+        // wants to open a folder
+        var folder = dialog.showOpenDialog({
+            properties: ['openDirectory']
+        });
+
+        if (folder === undefined) {
+            console.log('no project folder chosen');
+            return;
+        }
+
+        console.log(folder[0]);
+        window.projectFolder = folder[0];  
+
+        this.import_circuit();
 
     }
 
@@ -573,6 +616,8 @@ schematic = (function() {
     Schematic.prototype.export = function() {
         // give all the circuit nodes a name, extract netlist
         this.label_connection_points();
+
+        console.log(window.projectFolder);
 
         var netlist = this.to_netlist();
         var result = [];
@@ -583,21 +628,8 @@ schematic = (function() {
             }
         };
 
-
-        const options_netlist = {
-            message: 'Please select a location for the netlist file'
-        };
-        const options_structure = {
-            message: 'Please select a location for the structure file (for import)'
-        };
-
-        dialog.showMessageBox(null, options_netlist);
-        var filename = dialog.showSaveDialog();
-        if (filename === undefined) {
-            console.log("Did not create a file");
-            return;
-        }
-
+        // create the netlist file at <window.projectFolder>/circuit.nls
+        var filename = window.projectFolder + "/circuit.nls"
         fs.writeFile(filename, result.join('\n'), (err) => {
             if(err){
                 console.log("error while creating the file " + err.message);
@@ -605,14 +637,9 @@ schematic = (function() {
             }        
         });
 
-        dialog.showMessageBox(null, options_structure);
-        filename = dialog.showSaveDialog();
 
-        if (filename === undefined) {
-            console.log("Did not create a file");
-            return;
-        }
-
+        // create the import file at <window.projectFolder>/circuit.txt
+        var filename = window.projectFolder + "/circuit.txt"
         var json_version = this.json();
         var str = JSON.stringify(json_version);
         fs.writeFile(filename, str, (err) => {
@@ -622,75 +649,58 @@ schematic = (function() {
             }        
         });
 
+
+        const options_done = {
+            message: 'netlist file circuit.nls and import file circuit.txt created!'
+        }
+        dialog.showMessageBox(null, options_done);
+
     }
 
     Schematic.prototype.run_simulation = function() {
         this.enable_tool('run_simulation', false);
 
-        console.log(shell_cmd.sayHelloWorld());
-
         const options_signal = {
             message: 'Please select a signal file'
         };
-        const options_output = {
-            message: 'Please select an output location'
-        };
+            
         const options_netlist = {
-            message: 'Please select a netlist file (.nls), or select live audio',
+            message: 'Use a sound file live audio?',
             type: 'question',
-            buttons: ['Upload Netlist', 'Live Audio']
+            buttons: ['Sound File', 'Live Audio']
         };
 
-        dialog.showMessageBox(null, options_signal);
-        var signal_files = dialog.showOpenDialog();
-
-        if (signal_files === undefined) {
-            this.enable_tool('run_simulation', true);
-            console.log('no signal file chosen');
-            return;
-        }
-
-        console.log(signal_files[0]);
-
-        dialog.showMessageBox(null, options_output);
-        var output_file = dialog.showSaveDialog();
-
-        if (output_file === undefined) {
-            this.enable_tool('run_simulation', true);
-            console.log('no output file chosen');
-            return;
-        }
-
-        // this.play_file = output_file;
-
-        // let the user choose to upload a file or do live audio
+        var output_file = window.projectFolder + '/output.cso';
+        var circuit_file = window.projectFolder + '/circuit.nls';
 
         var choice = dialog.showMessageBox(null, options_netlist);
-
-        // choice == 0 if user wants to upload a netlist 
+        
+        // choice == 0 means user uploads a sound
         if (choice == 0) {
-            var netlist_files = dialog.showOpenDialog();
+            var sound_files = dialog.showOpenDialog();
 
-            if (netlist_files === undefined) {
+            if (sound_files === undefined) {
                 this.enable_tool('run_simulation', true);
-                console.log('no netlist file chosen');
+                console.log('no sound file chosen');
                 return;
             }
 
-            console.log(netlist_files[0]);
-            var command = '../backend/csim -c ' + netlist_files[0] + ' -s ' + signal_files[0] + ' -o ' + output_file + ' --plot';
+            console.log(sound_files[0]);
+            var command = '../backend/csim -c ' + circuit_file + ' -s ' + sound_files[0] + ' -o ' + output_file + ' --plot';
 
+        // choice == 1 means user wants to play live audio
         } else {
-            var command = '../backend/csim -s ' + signal_files[0] + ' -o ' + output_file + ' --live --plot';
+            var command = '../backend/csim -c ' + circuit_file + ' -o ' + output_file + ' --live_audio --plot';
         }
 
-        // change var command to change the cmd line command ran
         console.log(command);
-        
+
+
         shell_cmd.exec(command, (output) => {
             console.log(output);
         });
 
+/*
         // two ways of executing cmd line args
         // first way spawns a child process; output visible in terminal 
         shell_cmd.exec('python test.py 1 2', (output) => {
@@ -701,7 +711,7 @@ schematic = (function() {
         execute('python test.py 3 4', (output) => {
             console.log(output);
         })
-
+*/
         this.enable_tool('run_simulation', true);
     }
 
@@ -2752,10 +2762,9 @@ schematic = (function() {
     //
     ////////////////////////////////////////////////////////////////////////////////
 
-    function Diode(x,y,rotation,name = 'd',area) {
+    function Diode(x,y,rotation,name = 'd') {
         Component.call(this,'d',x,y,rotation);
         this.properties['name'] = name + Diode.index;
-        this.properties['area'] = area ? area : '1';
         this.add_connection(0,0);   // anode
         this.add_connection(0,48);  // cathode
         this.bounding_box = [-8,0,8,48];
@@ -2771,7 +2780,7 @@ schematic = (function() {
     }
 
     Diode.prototype.toString = function() {
-        return '<Diode '+this.properties['area']+' ('+this.x+','+this.y+')>';
+        return '<Diode ('+this.x+','+this.y+')>';
     }
     
     Diode.prototype.draw = function(c) {
@@ -2783,14 +2792,13 @@ schematic = (function() {
         this.draw_line(c,-8,32,8,32);
         this.draw_line(c,0,32,0,48);
 
-        if (this.properties['area'])
-        this.draw_text(c,this.properties['area'],10,24,3,property_size);
         if (this.properties['name'])
         this.draw_text(c,this.properties['name'],-10,24,5,property_size);
     }
 
     Diode.prototype.clone = function(x,y) {
-        return new Diode(x,y,this.rotation,'d',this.properties['area']);
+        return new Diode(x, y, this.rotation, 'd');
+
     }
 
 
@@ -2800,7 +2808,6 @@ schematic = (function() {
 
         for (var i = 0; i < this.connections.length; i++)
             json.push(this.connections[i].json());
-        json.push(this.properties['area']);
 
         return json;
     }
