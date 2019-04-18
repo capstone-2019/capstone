@@ -42,6 +42,10 @@ test_hw: $(TEST_OBJ)
 
 utils:
 	make -C src/utils/playback/ all
+all:
+	make utils
+	make test_hw
+	make csim
 
 # build object file for each source file
 %.o: %.cpp
@@ -60,6 +64,9 @@ clean:
 	$(RM) $(OBJ)
 	$(RM) $(TARGET)
 	make -C src/utils/playback clean
+	$(RM) $(TEST_OBJ)
+	$(RM) test_hw
+	$(RM) playback
 
 # delete all executables, object files, and HTML documentation
 veryclean: clean

@@ -23,6 +23,7 @@
 #include <components/component.hpp>
 #include <circuit.hpp>
 #include <audio_manager.hpp>
+#include <sim.hpp>
 
 /****************************************************************************
  *                             NetlistIterator                              *
@@ -82,8 +83,7 @@ class NetlistParser
 {
 public:
     /* Create a netlist parser */
-    NetlistParser(const char *netfile, const char *sigfile,
-        const char *outfile);
+    NetlistParser(simparams_t *params);
 
     /* Destroy a netlist parser */
     ~NetlistParser();

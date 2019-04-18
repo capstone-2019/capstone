@@ -18,6 +18,7 @@
 
 #define HW_FRAMES_PER_BUFFER 512
 #define HW_SAMPLERATE 44100
+#define NUM_CHANNELS 2
 
 class AudioManager
 {
@@ -31,6 +32,7 @@ public:
 	typedef enum {
 		FILETYPE_WAV,
 		FILETYPE_TXT,
+		FILETYPE_NONE,
 	} filetype_t;
 
 	static constexpr const int OUTPUT_FILE = 1;

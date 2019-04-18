@@ -16,6 +16,20 @@
 static std::mutex m;
 static std::condition_variable cv;
 
+float cubic_amplifier(float x) {
+	if (x < 0.f) {
+		x += 1.f;
+		x = x * x * x - 1.f;
+	} else {
+		x -= 1.f;
+		x = x * x * x + 1.f;
+	}
+	return x;
+}
+
+float fuzz(float x) {
+	return cubic_amplifier(cubic_amplifier(cubic_amplifier(cubic_amplifier(x))));
+}
 
 static int callBack(const void *inputBuffer, void *outputBuffer,
 					unsigned long framesPerBuffer,
@@ -26,10 +40,18 @@ static int callBack(const void *inputBuffer, void *outputBuffer,
 	AudioManager::callback_data *data = (AudioManager::callback_data*) userData;
 
 	// printf("callback. data->num_frames %d\n", data->num_frames);
+	float total;
 
 	if (data->in) {
 		AudioManager::buffer b;
-		memcpy(b.buf, inputBuffer, framesPerBuffer * sizeof(float));
+		// memcpy(b.buf, inputBuffer, framesPerBuffer * sizeof(float));
+		for (int i = 0; i < framesPerBuffer; i++) {
+			total = 0.f;
+			for (int j = 0; j < NUM_CHANNELS; j++) {
+				total += ((float*)inputBuffer)[NUM_CHANNELS*i];
+			}
+			b.buf[i] = fuzz(total / ((float) NUM_CHANNELS));
+		}
 		data->hw_input_buf.push(b); //TODO: Emplace? push?
 		data->num_frames += framesPerBuffer;
 		cv.notify_one();
@@ -37,7 +59,10 @@ static int callBack(const void *inputBuffer, void *outputBuffer,
 
 	if (data->out) {
 		if (data->hw_output_buf.size() >= 2) {
-			memcpy(outputBuffer, &data->hw_output_buf.front(), framesPerBuffer * sizeof(float));
+			// for (int i = 0; i < framesPerBuffer; i++) {
+			// 	((float *)outputBuffer)[i] = data->hw_output_buf.front().buf[i];
+			// }
+			memcpy(outputBuffer, data->hw_output_buf.front().buf, framesPerBuffer * sizeof(float));
 			data->hw_output_buf.pop();
 		}
 	}
@@ -51,10 +76,11 @@ static PaStream* portaudio_init_hw(AudioManager::callback_data *data) {
 	PaStream *stream;
 	PaStreamParameters inputParameters;
 	inputParameters.device = Pa_GetDefaultInputDevice();
-	inputParameters.channelCount = 1;
+	inputParameters.channelCount = NUM_CHANNELS;
 	inputParameters.sampleFormat = paFloat32;
 	inputParameters.suggestedLatency = Pa_GetDeviceInfo(inputParameters.device)->defaultLowInputLatency;
     inputParameters.hostApiSpecificStreamInfo = NULL;
+    // printf("latency : %lf\n", Pa_GetDeviceInfo(inputParameters.device)->defaultHighInputLatency);
 
     PaStreamParameters outputParameters;
 	outputParameters.device = Pa_GetDefaultOutputDevice();
@@ -97,10 +123,6 @@ AudioManager::AudioManager(input_t input_mode, output_t output_mode,
 	/* initialize input */
 	/* TODO: Support hardware modes things */
 	if (input_mode == INPUT_HARDWARE) {
-		/* initialize portaudio */
-		if (Pa_Initialize() != paNoError) {
-			printf("Error while initializing portaudio\n");
-		}
 		/* initialize hw_data */
 		data->samplerate = HW_SAMPLERATE;
 		data->num_frames = 0;
@@ -135,6 +157,10 @@ AudioManager::AudioManager(input_t input_mode, output_t output_mode,
 
 	/* initialize portaudio */
 	if (input_mode == INPUT_HARDWARE || output_mode & OUTPUT_HARDWARE) {
+		/* initialize portaudio */
+		if (Pa_Initialize() != paNoError) {
+			printf("Error while initializing portaudio\n");
+		}
 		stream = portaudio_init_hw(data);
 		if (Pa_StartStream(stream) != paNoError) {
 			printf("Error while starting stream\n");
@@ -173,12 +199,10 @@ bool AudioManager::hw_get_next_value(double *val) {
 
 	data->num_frames_read++;
 
-
 	return true;
 }
 
 bool AudioManager::get_next_value(double *val) {
-
 	if (input_mode == INPUT_FILE)
 		return file_get_next_value(val);
 	else if (input_mode == INPUT_HARDWARE) {
