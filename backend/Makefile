@@ -5,7 +5,7 @@ TARGET = csim
 CC = g++
 
 SRC_DIRS = src
-INC_DIRS = inc/sim inc/sim/eigen inc/audio_processor
+INC_DIRS = inc/sim inc/sim/eigen inc/audio_processor inc/effects
 EXCLUDE_DIRS = src/utils
 
 UTILS_DIRS = src/utils
