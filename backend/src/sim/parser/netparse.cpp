@@ -282,6 +282,12 @@ Component *NetlistParser::component_from_tokens(vector<string> &tokens) {
         return vout;
     }
 
+    else if (tokens[0] == Diode::IDENTIFIER) {
+        Diode *d = new Diode(tokens);
+        c.register_diode(d);
+        return d;
+    }
+
     /* bad identifier */
     else {
         std::cerr << "Unrecognized token " << tokens[0] << std::endl;

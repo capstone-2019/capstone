@@ -1,5 +1,7 @@
 .DS_Store
 *.pyc
 *.o
+*.cso
 __pycache__
 electron_frontend/node_modules
+.vscode
