@@ -12,6 +12,11 @@
 #include <iostream>
 #include <assert.h>
 #include <errors.hpp>
+#include <vector>
+#include <string>
+
+using std::string;
+using std::vector;
 
 using std::vector;
 using std::string;
@@ -254,7 +259,7 @@ void AudioManager::hw_set_next_value(double val) {
 void AudioManager::set_next_value(double val) {
 	if (output_mode & OUTPUT_FILE) file_set_next_value(val);
 	if (output_mode & OUTPUT_HARDWARE) hw_set_next_value(val);
-}	
+}
 
 void AudioManager::finish() {
 	if (fout != NULL) {

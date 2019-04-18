@@ -54,7 +54,8 @@ public:
 	/** @brief Constructor for both input and output files */
 	AudioManager(input_t input_mode, output_t output_mode,
 				 const char *input_filename, const char *output_filename,
-				 filetype_t infile_type);
+				 filetype_t infile_type,
+				 std::vector<std::string> effect_blocks);
 
 	/** @brief gets the next available value and stores it in val. Returns
 	    false when no more data is available. */
@@ -99,7 +100,7 @@ private:
 
 	bool hw_get_next_value(double *val);
 	bool file_get_next_value(double *val);
-	void hw_set_next_value(double val);	
+	void hw_set_next_value(double val);
 	void file_set_next_value(double val);
 
 	buffer temp_out_buffer;
