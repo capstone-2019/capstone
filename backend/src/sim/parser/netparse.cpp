@@ -26,6 +26,12 @@
 using std::vector;
 using std::string;
 
+static const char *effect_idenfifiers[] = {
+    "REVERB",
+    "FUZZ",
+    NULL,
+};
+
 /****************************************************************************
  *                          String Parsing Helpers                          *
  ****************************************************************************/
@@ -59,6 +65,23 @@ static AudioManager::filetype_t get_filetype(const string& fname) {
     if (extension == "wav" || extension == "ogg")
         return AudioManager::FILETYPE_WAV;
     return AudioManager::FILETYPE_TXT;
+}
+
+static bool is_effect_block(const string& s) {
+    for (int i = 0; effect_idenfifiers[i] != NULL; i++) {
+        if (s == effect_idenfifiers[i]) return true;
+    }
+    return false;
+}
+
+static vector<string> get_effect_blocks(NetlistIterator& ni) {
+    vector<string> blocks;
+    for (auto it = ni.begin(); it != ni.end(); ++it) {
+        vector<string> tokens = tokenize(*it);
+        if (is_effect_block(tokens[0]))
+            blocks.push_back(*it);
+    }
+    return blocks;
 }
 
 /****************************************************************************
@@ -160,7 +183,7 @@ string NetlistIterator::remove_comments(const string& line) {
 
 
 static AudioManager::input_t get_input_source(simparams_t *params) {
-    
+
     if (params->outfile != NULL) {
         return AudioManager::INPUT_FILE;
     } else if (params->live_output) {
@@ -200,6 +223,8 @@ NetlistParser::NetlistParser(simparams_t *params) {
     const char *sigfile = params->signal_file;
     const char *outfile = params->outfile;
 
+    NetlistIterator ni (netfile);
+
     /**
      * Construct the AudioManager for the circuit simulation.
      *
@@ -207,18 +232,22 @@ NetlistParser::NetlistParser(simparams_t *params) {
      */
     AudioManager::input_t input_source = get_input_source(params);
     AudioManager::output_t output_source = get_outputs(params);
-    AudioManager::filetype_t filetype = input_source == AudioManager::INPUT_FILE ? 
-                                        get_filetype(sigfile) : 
+    AudioManager::filetype_t filetype = input_source == AudioManager::INPUT_FILE ?
+                                        get_filetype(sigfile) :
                                         AudioManager::FILETYPE_NONE;
+
+
+    vector<string> effect_blocks = get_effect_blocks(ni);
+
     this->am = new AudioManager(
         input_source,
         output_source,
         sigfile,
         outfile,
-        filetype);
+        filetype,
+        effect_blocks);
 
     input_signal_file = sigfile;
-    NetlistIterator ni (netfile);
 
     for (auto it = ni.begin(); it != ni.end(); it++) {
         const string& line = *it;
@@ -227,7 +256,10 @@ NetlistParser::NetlistParser(simparams_t *params) {
             ground_id = stoi(tokens[1]);
         }
         else {
-            components.push_back(component_from_tokens(tokens));
+            Component *c = component_from_tokens(tokens);
+            if (c != NULL) {
+                components.push_back(c);
+            }
         }
     }
 
@@ -290,7 +322,6 @@ Component *NetlistParser::component_from_tokens(vector<string> &tokens) {
 
     /* bad identifier */
     else {
-        std::cerr << "Unrecognized token " << tokens[0] << std::endl;
         return NULL;
     }
 }

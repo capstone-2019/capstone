@@ -12,6 +12,11 @@
 #include <iostream>
 #include <assert.h>
 #include <errors.hpp>
+#include <vector>
+#include <string>
+
+using std::string;
+using std::vector;
 
 static std::mutex m;
 static std::condition_variable cv;
@@ -111,7 +116,8 @@ static PaStream* portaudio_init_hw(AudioManager::callback_data *data) {
 
 AudioManager::AudioManager(input_t input_mode, output_t output_mode,
 			 const char *input_filename, const char *output_filename,
-			 filetype_t infile_type) {
+			 filetype_t infile_type,
+			 vector<string> effect_blocks) {
 
 	this->input_mode = input_mode;
 	data = new callback_data;
@@ -230,7 +236,7 @@ void AudioManager::hw_set_next_value(double val) {
 void AudioManager::set_next_value(double val) {
 	if (output_mode & OUTPUT_FILE) file_set_next_value(val);
 	if (output_mode & OUTPUT_HARDWARE) hw_set_next_value(val);
-}	
+}
 
 void AudioManager::finish() {
 	if (fout != NULL) {
