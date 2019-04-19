@@ -52,6 +52,17 @@
   border: 1px solid #888;
   width: 50%; /* Could be more or less, depending on screen size */
   max-width: 500px;
+  position: relative;
+}
+
+.live-title {
+	width: 100%;
+	text-align: center;
+}
+
+.button-holder {
+	width: 100%;
+	text-align: center;
 }
 
 /* The Close Button */
@@ -69,9 +80,35 @@
   cursor: pointer;
 }
 
+.button-stop {
+	background: #f26a6c;
+	color: #fff;
+}
+
+.button-stop:hover {
+	color: #f26a6c;
+	background: #fff;
+}
+
+.button-start {
+	background:#1AAB8A;
+  	color:#fff;
+}
+
+.button-start:hover {
+	background:#fff;
+  	color:#1AAB8A;
+}
+
+.button-start:before,.button-start:after {
+	background: #1AAB8A;
+}
+
+.button-stop:before,.button-stop:after {
+	background: #f26a6c;
+}
+
 button{
-  background:#1AAB8A;
-  color:#fff;
   border:none;
   position:relative;
   height:60px;
@@ -81,11 +118,10 @@ button{
   transition:800ms ease all;
   outline:none;
   width: 200px;
+  display: inline-block;
+  margin: 10px;
 }
-button:hover{
-  background:#fff;
-  color:#1AAB8A;
-}
+
 button:before,button:after{
   content:'';
   position:absolute;
@@ -93,7 +129,6 @@ button:before,button:after{
   right:0;
   height:2px;
   width:0;
-  background: #1AAB8A;
   transition:400ms ease all;
 }
 button:after{
