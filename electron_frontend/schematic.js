@@ -49,14 +49,96 @@ function execute(command, callback) {
     });
 };
 
+
+
+
+/****************************************************************************
+ *                            Live Audio Support                            *
+ ****************************************************************************/
+
+function stopTimer () {
+    if (window.timer) {
+        clearInterval(window.timer);
+    }
+    window.elapsed = 0;
+}
+
+function startTimer () {
+    stopTimer();
+
+    update = function () {
+        window.elapsed++;
+
+        var mins = Math.floor(window.elapsed / 60);
+        if (mins == 0) {
+            mins = "00";
+        } else if (mins < 10) {
+            mins = "0" + mins.toString();
+        } else {
+            mins = mins.toString();
+        }
+
+        var secs = window.elapsed % 60;
+        if (secs == 0) {
+            secs = "00";
+        } else if (secs < 10) {
+            secs = "0" + secs.toString();
+        } else {
+            secs = secs.toString();
+        }
+
+        console.log("END: mins = ", mins, " secs = ", secs);
+
+        var timePassed = mins + ":" + secs
+        console.log("time passed: ", timePassed);
+        var timespan = document.getElementById("sim-duration");
+        timespan.innerHTML = timePassed;
+    }
+
+    window.timer = setInterval(update, 1000);
+}
+
+function stopSimulator () {
+    var pid = window.simpid;
+    var command = "kill -SIGUSR1 " + window.simpid.toString();
+    alert("about to run: " + command);
+    shell_cmd.exec(command);
+    window.simulationRunning = false;
+    window.simpid = -1;
+}
+
 function openLiveAudioModal () {
+
+    /* find the modal and close button in DOM */
     var modal = document.getElementById('myModal');
     var span = document.getElementsByClassName("close")[0];
+
+    /* show the modal */
+    modal.style.display = "block";
+
+    /* when close button is pressed, hide the modal */
     span.onclick = function() {
         modal.style.display = "none";
     }
-    modal.style.display = "block";
+
+    var start_btn = document.getElementById("btn-start");
+    var stop_btn = document.getElementById("btn-stop");
+
+    start_btn.addEventListener('click', function () {
+        startTimer();
+        window.simulationRunning = true;
+        window.simpid = shell_cmd.exec(window.command);
+    });
+
+    stop_btn.addEventListener('click', function () {
+        stopTimer();
+        stopSimulator();
+    });
 }
+
+/****************************************************************************
+ *                             Schematic Module                             *
+ ****************************************************************************/
 
 // set up each schematic entry widget
 function update_schematics() {
@@ -122,6 +204,10 @@ function add_schematic_handler(other_onload) {
 
         update_schematics();
         manage_project();
+        window.simulationRunning = false;
+        window.simpid = -1;
+        window.timer = null;
+        window.elapsed = 0;
     }
 }
 window.onload = add_schematic_handler(window.onload);
@@ -737,18 +823,17 @@ schematic = (function() {
             console.log(sound_files[0]);
             var command = '../backend/csim -c ' + circuit_file + ' -s ' + sound_files[0] + ' -o ' + output_file + ' --plot';
 
+            shell_cmd.exec(command, (output) => {
+                console.log(output);
+            });
+
         // choice == 1 means user wants to play live audio
         } else {
-            var command = '../backend/csim -c ' + circuit_file + ' -o ' + output_file + ' --live_input --plot';
+            window.command = '../backend/csim -c ' + circuit_file + ' -o ' + output_file + ' --live-input';
             openLiveAudioModal();
         }
 
-        console.log(command);
 
-
-        shell_cmd.exec(command, (output) => {
-            console.log(output);
-        });
 
 /*
         // two ways of executing cmd line args
