@@ -376,12 +376,12 @@ schematic = (function() {
 
         // respond to requests to import a circuit
         ipcRenderer.on("import-circuit", function (event, arg) {
-            alert("Importing a circuit");
+            _schematic.import();
         });
 
         // respond to requests to show help menu
-        ipcRenderer.on("help", function (event, arg) {
-            alert("Showing help menu");
+        ipcRenderer.on("export-circuit", function (event, arg) {
+            _schematic.export();
         });
 
     }
@@ -691,7 +691,7 @@ schematic = (function() {
 
 
         const options_done = {
-            message: 'netlist file circuit.nls and import file circuit.txt created!'
+            message: 'Project saved successfully.'
         }
         dialog.showMessageBox(null, options_done);
 

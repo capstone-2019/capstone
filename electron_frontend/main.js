@@ -8,6 +8,12 @@ const { ipcMain } = require('electron');
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
 
+function deliver (code) {
+    return function (menuItem, currentWindow) {
+        currentWindow.webContents.send(code);
+    }
+}
+
 function installMenu (window) {
 
     const template = [
@@ -26,6 +32,7 @@ function installMenu (window) {
                 {
                     label: "Save",
                     accelerator: "CmdOrCtrl+S",
+                    click: deliver('export-circuit'),
                 },
 
                 // quit the application
@@ -60,17 +67,13 @@ function installMenu (window) {
                 {
                     label: "Launch Simulation",
                     accelerator: "CmdOrCtrl+B",
-                    click: function (menuItem, currentWindow) {
-                        currentWindow.webContents.send('run-simulation');
-                    }
+                    click: deliver('run-simulation'),
                 },
 
                 // play sound from an output file
                 {
                     label: "Play Sound",
-                    click: function (menuItem, currentWindow) {
-                        currentWindow.webContents.send('playback');
-                    }
+                    click: deliver('playback'),
                 }
             ],
         },
