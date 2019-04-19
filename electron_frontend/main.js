@@ -54,6 +54,7 @@ function installMenu (window) {
                 // switch projects
                 {
                     label: "Open Existing Project",
+                    click: deliver('import-circuit'),
                 },
             ],
         },
@@ -104,6 +105,7 @@ function createWindow () {
     });
 
     // maximize the application
+    // mainWindow.setFullScreen(true);
     mainWindow.maximize();
 
     // and load the index.html of the app.

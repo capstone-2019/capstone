@@ -49,6 +49,15 @@ function execute(command, callback) {
     });
 };
 
+function openLiveAudioModal () {
+    var modal = document.getElementById('myModal');
+    var span = document.getElementsByClassName("close")[0];
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+    modal.style.display = "block";
+}
+
 // set up each schematic entry widget
 function update_schematics() {
     // set up each schematic on the page
@@ -730,7 +739,8 @@ schematic = (function() {
 
         // choice == 1 means user wants to play live audio
         } else {
-            var command = '../backend/csim -c ' + circuit_file + ' -o ' + output_file + ' --live_audio --plot';
+            var command = '../backend/csim -c ' + circuit_file + ' -o ' + output_file + ' --live_input --plot';
+            openLiveAudioModal();
         }
 
         console.log(command);
