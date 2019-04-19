@@ -1,34 +1,120 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, shell} = require('electron')
+const {app, BrowserWindow, shell, Menu} = require('electron')
 
 const os = require('os')
+const { ipcMain } = require('electron');
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
 
+function installMenu (window) {
+
+    const template = [
+
+        // dummy menu that is needed to make things render right on MacOS...
+        {
+            label: "",
+        },
+
+        // file menu
+        {
+            label: "File",
+            submenu: [
+
+                // save the current circuit into project directory
+                {
+                    label: "Save",
+                    accelerator: "CmdOrCtrl+S",
+                },
+
+                // quit the application
+                {
+                    label: "Quit",
+                    accelerator: "CmdOrCtrl+Q",
+                    role: 'quit',
+                },
+
+                {
+                    type: 'separator',
+                },
+
+                // import audio files
+                {
+                    label: "Import Audio",
+                },
+
+                // switch projects
+                {
+                    label: "Open Existing Project",
+                },
+            ],
+        },
+
+        // tools menu
+        {
+            label: "Tools",
+            submenu: [
+
+                // start a new simulation
+                {
+                    label: "Launch Simulation",
+                    accelerator: "CmdOrCtrl+B",
+                    click: function (menuItem, currentWindow) {
+                        currentWindow.webContents.send('run-simulation');
+                    }
+                },
+
+                // play sound from an output file
+                {
+                    label: "Play Sound",
+                    click: function (menuItem, currentWindow) {
+                        currentWindow.webContents.send('playback');
+                    }
+                }
+            ],
+        },
+
+        // developer menu
+        {
+            label: "Developer",
+            submenu: [
+                {
+                    label: "View DevTools",
+                    accelerator: "CmdOrCtrl+J",
+                    role: 'toggleDevTools',
+                },
+            ]
+        },
+
+    ];
+
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
 function createWindow () {
-  // Create the browser window.
-  mainWindow = new BrowserWindow({
-    width: 900,
-    height: 900,
-    webPreferences: {
-      nodeIntegration: true
-    }
-  })
+    // Create the browser window.
+    mainWindow = new BrowserWindow({
+        width: 900,
+        height: 900,
+        webPreferences: { nodeIntegration: true },
+    });
 
-  // and load the index.html of the app.
-  mainWindow.loadFile('index.html')
+    // maximize the application
+    mainWindow.maximize();
 
-  // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+    // and load the index.html of the app.
+    mainWindow.loadFile('index.html');
 
-  // Emitted when the window is closed.
-  mainWindow.on('closed', function () {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    mainWindow = null
-  })
+    // Emitted when the window is closed.
+    mainWindow.on('closed', function () {
+        // Dereference the window object, usually you would store windows
+        // in an array if your app supports multi windows, this is the time
+        // when you should delete the corresponding element.
+        mainWindow = null
+    });
+
+    installMenu();
 }
 
 // This method will be called when Electron has finished
