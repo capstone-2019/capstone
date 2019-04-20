@@ -189,7 +189,7 @@ function manage_project() {
         shell_cmd.exec(command, (output) => {
             console.log(output);
         });
-        this.redraw_background();
+        schematic.redraw_background();
 
     } else {
 
@@ -241,7 +241,10 @@ schematic = (function() {
         'd': [Diode, 'Diode'],
         'Vin': [VIn, 'Voltage In'],
         'Vout': [VOut, 'Voltage Out'],
-        // 'n': [NFet, 'NFet'],
+        'n': [NFet, 'NFet'],
+        'fuzz': [Fuzz, 'Fuzz'],
+        'reverb': [Reverb, 'Reverb'],
+        'delay': [Delay, 'Delay']
         // 'p': [PFet, 'PFet'],
     };
 
@@ -749,6 +752,16 @@ schematic = (function() {
 
     }
 
+
+
+    Schematic.prototype.simplify_labels = function(component) {
+        // find out the real labels for Vin and Vout
+
+        return
+
+
+
+    }
     // creates two files: the netlist file for circuit sim, and circuit file for import
     Schematic.prototype.export = function() {
         // give all the circuit nodes a name, extract netlist
@@ -916,6 +929,9 @@ schematic = (function() {
                 var coords = c[2];
                 var properties = c[3];
 
+
+                console.log(type);
+                console.log(c);
                 var part = new parts_map[type][0](coords[0],coords[1],coords[2]);
 
                 // give it its properties
@@ -997,6 +1013,9 @@ schematic = (function() {
         var json = [];
 
         var n = this.components.length;
+
+        console.log(this.components);
+
         for (var i = 0; i < n; i++)
             json.push(this.components[i].to_netlist(i));
 
@@ -1917,7 +1936,21 @@ schematic = (function() {
     }
 
     Part.prototype.draw_text = function(c,text,x,y,size) {
-        // no text displayed for the parts icon
+
+        if (this.component.type == 'fb') {
+
+            c.font = (size * 2) + 'pt sans-serif';
+
+            var t = this.component.properties['effect'].slice(0, 3);
+            var offset = 3;
+
+            c.fillText(t,(x - this.origin_x) * this.scale - offset,(y - this.origin_y) * this.scale);
+
+        } else if (this.component.type == 'Vin' || this.component.type == 'Vout') {
+            c.font = (size + 2) + 'pt sans-serif';
+            c.fillText(this.component.type, (x - this.origin_x) * this.scale + 2, (y - this.origin_y) * this.scale); 
+        }
+        
     }
 
     function part_enter(event) {
@@ -3039,6 +3072,7 @@ schematic = (function() {
 
         return json;
     }
+
     ////////////////////////////////////////////////////////////////////////////////
     //
     //  P-channel Mosfet
@@ -3152,6 +3186,138 @@ schematic = (function() {
     OpAmp.prototype.clone = function(x,y) {
         return new OpAmp(x,y,this.rotation,this.properties['name'],this.properties['A']);
     }
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    //  Functional Block
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+
+
+    function FunctionalBlock(x, y, rotation, name, effect, type) {
+        console.log(type);
+
+        Component.call(this,'hi',x,y,rotation);
+        console.log(this.type);
+
+        this.properties['name'] = name;
+        if (effect == undefined) effect = 'fuzz';
+        this.properties['effect'] = effect;
+        this.add_connection(-24, 16);
+        this.add_connection(-24, 32);
+        this.add_connection(24, 16);
+        this.add_connection(24, 32);
+        this.bounding_box = [-24, 0, 24, 48];
+        this.type = type;
+
+        console.log(this.type);
+
+        this.update_coords();
+
+    }
+
+    FunctionalBlock.prototype = new Component();
+    FunctionalBlock.prototype.constructor = FunctionalBlock;
+
+    FunctionalBlock.prototype.toString = function() {
+        return '<'+this.type+'Functional Block '+this.properties['params']+' ('+this.x+','+this.y+')>';
+    }
+
+    FunctionalBlock.prototype.draw = function(c) {
+        // Component.prototype.draw.call(this,c);   // give superclass a shot
+        
+        this.draw_line(c, -16, 8, 16, 8);
+        this.draw_line(c, -16, 40, 16, 40);
+        this.draw_line(c, -16, 8, -16, 40);
+        this.draw_line(c, 16, 8, 16, 40);
+        this.draw_line(c, -24, 16, -16, 16);
+        this.draw_line(c, -24, 32, -16, 32);
+        this.draw_line(c, 24, 16, 16, 16);
+        this.draw_line(c, 24, 32, 16, 32);
+
+
+        if (this.properties['effect']) {
+            var offset = -6;
+            if (this.properties['effect'] == 'delay') {
+                offset = -8;
+            } else if (this.properties['effect'] == 'reverb') {
+                offset = -9;
+            };
+
+            this.draw_text(c,this.properties['effect'], offset,24,3,property_size);
+        }
+    }
+
+    FunctionalBlock.prototype.clone = function(x,y) {
+        // right now, effect and type are the same thing. may condense later (TODO)
+        return new FunctionalBlock(x,y,this.rotation,'fb',this.properties['effect'], this.properties['effect']);
+    }
+
+    FunctionalBlock.prototype.to_netlist = function(index) {
+        var json = [this.properties['effect']];
+        return json;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    //  Fuzz 
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+
+
+    function Fuzz(x, y, rotation, name) {
+        FunctionalBlock.call(this,x,y,rotation,name,'fuzz', 'fuzz'); 
+        this.type = 'fuzz';
+    }
+    
+    Fuzz.prototype = new Component();
+    Fuzz.prototype.constructor = Fuzz;
+    Fuzz.prototype.toString = FunctionalBlock.prototype.toString;
+    Fuzz.prototype.draw = FunctionalBlock.prototype.draw;
+    Fuzz.prototype.clone = FunctionalBlock.prototype.clone;
+    Fuzz.prototype.to_netlist = FunctionalBlock.prototype.to_netlist;
+
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    //  Delay 
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+
+
+    function Delay(x, y, rotation, name) {
+        FunctionalBlock.call(this,x,y,rotation,name, 'delay', 'delay');  
+        this.type = 'delay';
+
+    }
+    
+    Delay.prototype = new Component();
+    Delay.prototype.constructor = Delay;
+    Delay.prototype.toString = FunctionalBlock.prototype.toString;
+    Delay.prototype.draw = FunctionalBlock.prototype.draw;
+    Delay.prototype.clone = FunctionalBlock.prototype.clone;
+    Delay.prototype.to_netlist = FunctionalBlock.prototype.to_netlist;
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    //  Reverb 
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+
+
+    function Reverb(x, y, rotation, name) {
+        FunctionalBlock.call(this,x,y,rotation,name, 'reverb', 'reverb');  
+        this.type = 'reverb';
+    }
+    
+    Reverb.prototype = new Component();
+    Reverb.prototype.constructor = Reverb;
+    Reverb.prototype.toString = FunctionalBlock.prototype.toString;
+    Reverb.prototype.draw = FunctionalBlock.prototype.draw;
+    Reverb.prototype.clone = FunctionalBlock.prototype.clone;
+    Reverb.prototype.to_netlist = FunctionalBlock.prototype.to_netlist;
 
     ////////////////////////////////////////////////////////////////////////////////
     //
