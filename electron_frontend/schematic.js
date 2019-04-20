@@ -142,8 +142,11 @@ function openLiveAudioModal () {
     start_btn.addEventListener('click', function () {
         startTimer();
         runSoundAnimation();
-        window.simulationRunning = true;
-        window.simpid = shell_cmd.exec(window.command);
+        if (!window.simulationRunning) {
+            window.simulationRunning = true;
+            console.log(window.command);
+            window.simpid = shell_cmd.exec(window.command);
+        }
     });
 
     stop_btn.addEventListener('click', function () {
@@ -838,7 +841,7 @@ schematic = (function() {
 
         // choice == 1 means user wants to play live audio
         } else {
-            window.command = '../backend/csim -c ' + circuit_file + ' -o ' + output_file + ' --live-input';
+            window.command = '../backend/csim -c ' + circuit_file + ' -o ' + output_file + ' --live-input --live-output';
             openLiveAudioModal();
         }
 
