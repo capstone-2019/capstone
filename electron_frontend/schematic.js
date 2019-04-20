@@ -1937,7 +1937,7 @@ schematic = (function() {
 
     Part.prototype.draw_text = function(c,text,x,y,size) {
 
-        if (this.component.type == 'fb') {
+        if (this.component.type == 'fuzz' || this.component.type == 'reverb' || this.component.type == 'delay') {
 
             c.font = (size * 2) + 'pt sans-serif';
 
@@ -3196,10 +3196,7 @@ schematic = (function() {
 
 
     function FunctionalBlock(x, y, rotation, name, effect, type) {
-        console.log(type);
-
         Component.call(this,'hi',x,y,rotation);
-        console.log(this.type);
 
         this.properties['name'] = name;
         if (effect == undefined) effect = 'fuzz';
@@ -3210,9 +3207,6 @@ schematic = (function() {
         this.add_connection(24, 32);
         this.bounding_box = [-24, 0, 24, 48];
         this.type = type;
-
-        console.log(this.type);
-
         this.update_coords();
 
     }
@@ -3255,6 +3249,11 @@ schematic = (function() {
     }
 
     FunctionalBlock.prototype.to_netlist = function(index) {
+        var json = [this.properties['effect']];
+        return json;
+    }
+
+    FunctionalBlock.prototype.to_netlist_fb = function(index) {
         var json = [this.properties['effect']];
         return json;
     }
