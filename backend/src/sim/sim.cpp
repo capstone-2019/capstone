@@ -56,6 +56,7 @@ static int plotter_fd[2];
 #define MS_TO_S 1000
 
 static FILE *_fp;
+volatile bool stop_simulation = false;
 
 /**
  * @brief Handles fatal errors by printing a mesaage and exiting.
@@ -76,7 +77,7 @@ void sim_error(const char *fmt, ...) {
 static void sigusr1_handler(int signo) {
     fprintf(_fp, "Process received signal %d\n", signo);
     fclose(_fp);
-    exit(-1);
+    stop_simulation = true;
 }
 
 /**
@@ -190,7 +191,7 @@ void parse_command_line(int argc, char *argv[], simparams_t *params) {
         {"help",    no_argument,       0, 'h' },
         {"circuit", required_argument, 0, 'c' },
         {"signal",  required_argument, 0, 's' },
-        {"live-input",    no_argument,       0, LIVE_INPUT },
+        {"live-input",     no_argument,       0, LIVE_INPUT },
         {"live-output",    no_argument,       0, LIVE_OUTPUT },
         {"outfile", required_argument, 0, 'o' },
         {"plot",    no_argument,       0, ENABLE_PLOTTING },
@@ -276,6 +277,7 @@ int main(int argc, char *argv[]) {
 
     /* run transient analysis */
     c.transient(timescale, input_signal, output_signal);
+    fprintf(_fp, "we here\n");
 
     /* get ending time and print timing summary */
     auto t1 = std::chrono::high_resolution_clock::now();

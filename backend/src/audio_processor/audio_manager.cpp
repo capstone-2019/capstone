@@ -24,6 +24,8 @@ using std::string;
 static std::mutex m;
 static std::condition_variable cv;
 
+extern volatile bool stop_simulation;
+
 /****************************************************************************
  *                    audio hardware callback function                      *
  ****************************************************************************/
@@ -64,7 +66,7 @@ static int callBack(const void *inputBuffer, void *outputBuffer,
 		}
 	}
 
-	return !data->done ? 0 : paComplete;
+	return !data->done  ? 0 : paComplete;
 }
 
 /****************************************************************************
@@ -119,9 +121,13 @@ float AudioManager::apply_effects(float val, vector<string> effects) {
 
 	for (auto it = effects.begin(); it < effects.end(); ++it) {
 		if (*it == "REVERB") {
-			sim_error("not yet implemented\n");
+			val = reverb.apply(val);
 		} else if (*it == "FUZZ") {
-			val = reverb.apply((val));
+			val = fuzz.apply(val);
+		} else if (*it == "DELAY" ) {
+			val = delay.apply(val);
+		} else if (*it == "DISTORTION" ) {
+			val = distortion.apply(val);
 		} else {
 			sim_error("invalid pre-effect\n");
 		}
@@ -239,11 +245,7 @@ bool AudioManager::get_next_value(double *val) {
 
 	*val = (float) apply_effects((float) *val, effects);
 
-	// static int count = 0;
-
-	// if (count++ == 44100*6) {
-	// 	return false;
-	// }
+	if (stop_simulation) return false;
 	return ret;
 }
 
