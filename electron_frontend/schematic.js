@@ -63,6 +63,22 @@ function stopTimer () {
     window.elapsed = 0;
 }
 
+function runSoundAnimation () {
+    var boxes = ["box1", "box2", "box3", "box4", "box5"];
+    for (var i = 0; i < boxes.length; i++) {
+        var box = document.getElementById(boxes[i]);
+        box.classList.add(boxes[i]);
+    }
+}
+
+function stopSoundAnimation () {
+    var boxes = ["box1", "box2", "box3", "box4", "box5"];
+    for (var i = 0; i < boxes.length; i++) {
+        var box = document.getElementById(boxes[i]);
+        box.classList.remove(boxes[i]);
+    }
+}
+
 function startTimer () {
     stopTimer();
 
@@ -87,10 +103,7 @@ function startTimer () {
             secs = secs.toString();
         }
 
-        console.log("END: mins = ", mins, " secs = ", secs);
-
         var timePassed = mins + ":" + secs
-        console.log("time passed: ", timePassed);
         var timespan = document.getElementById("sim-duration");
         timespan.innerHTML = timePassed;
     }
@@ -99,6 +112,7 @@ function startTimer () {
 }
 
 function stopSimulator () {
+    stopSoundAnimation();
     var pid = window.simpid;
     var command = "kill -SIGUSR1 " + window.simpid.toString();
     if (pid > 0) {
@@ -127,6 +141,7 @@ function openLiveAudioModal () {
 
     start_btn.addEventListener('click', function () {
         startTimer();
+        runSoundAnimation();
         window.simulationRunning = true;
         window.simpid = shell_cmd.exec(window.command);
     });
