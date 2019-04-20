@@ -196,14 +196,13 @@ function manage_project() {
             return;
         }
 
-        console.log(choice);
-        console.log(folder);
         window.projectFolder = folder;
 
         var command = "mkdir " + folder;
         shell_cmd.exec(command, (output) => {
             console.log(output);
         });
+        schematic.redraw_background();
 
     } else {
 
@@ -255,7 +254,10 @@ schematic = (function() {
         'd': [Diode, 'Diode'],
         'Vin': [VIn, 'Voltage In'],
         'Vout': [VOut, 'Voltage Out'],
-        // 'n': [NFet, 'NFet'],
+        'n': [NFet, 'NFet'],
+        'fuzz': [Fuzz, 'Fuzz'],
+        'reverb': [Reverb, 'Reverb'],
+        'delay': [Delay, 'Delay']
         // 'p': [PFet, 'PFet'],
     };
 
@@ -715,7 +717,6 @@ schematic = (function() {
 
 
     Schematic.prototype.import_circuit = function() {
-        console.log(window.projectFolder);
         var filename = window.projectFolder + '/circuit.txt';
 
         fs.readFile(filename, 'utf-8', (err, data) => {
@@ -724,9 +725,7 @@ schematic = (function() {
                 this.redraw_background();
                 return;
             }
-            console.log(data);
 
-            console.log(this);
             if (this.components !== undefined) {
                 for (var i = this.components.length - 1; i >=0; --i) {
                     var c = this.components[i];
@@ -741,11 +740,8 @@ schematic = (function() {
         });
     }
 
-
-
     Schematic.prototype.import = function() {
 
-        console.log("hi im importing");
         // wants to open a folder
         var folder = dialog.showOpenDialog({
             properties: ['openDirectory']
@@ -756,7 +752,6 @@ schematic = (function() {
             return;
         }
 
-        console.log(folder[0]);
         window.projectFolder = folder[0];
 
         this.import_circuit();
@@ -767,8 +762,6 @@ schematic = (function() {
     Schematic.prototype.export = function() {
         // give all the circuit nodes a name, extract netlist
         this.label_connection_points();
-
-        console.log(window.projectFolder);
 
         var netlist = this.to_netlist();
         var result = [];
@@ -849,20 +842,6 @@ schematic = (function() {
             openLiveAudioModal();
         }
 
-
-
-/*
-        // two ways of executing cmd line args
-        // first way spawns a child process; output visible in terminal
-        shell_cmd.exec('python test.py 1 2', (output) => {
-            console.log(output);
-        })
-
-        // just a call to execute: output visible in 'browser' / electron console
-        execute('python test.py 3 4', (output) => {
-            console.log(output);
-        })
-*/
         this.enable_tool('run_simulation', true);
     }
 
@@ -909,8 +888,6 @@ schematic = (function() {
         if (value && value.indexOf('[') != -1) {
             // convert string value into data structure
             var json = JSON.parse(value);
-            console.log(value);
-            console.log(json);
 
             // top level is a list of components
             for (var i = json.length - 1; i >= 0; --i) {
@@ -1006,13 +983,179 @@ schematic = (function() {
         return json;
     }
 
+
+
+
+    // TODO
+    // component and location define a 'state'
+    Schematic.prototype.dfs = function(component, location, visited) {
+        // find out the real labels for Vin and Vout
+        
+        // first add your current location in visited
+
+        var current = component.type + location;
+        visited.add(current);
+
+        console.log(visited);
+        console.log(component);
+
+        if (component.type == 'Vin') {
+            // start this shit
+
+            var cplist = this.connection_points[location];
+            for (var i = 0; i < cplist.length; i++) {
+                if (cplist[i].parent.type != 'Vin') {
+                    console.log("not in vin");
+                    console.log(cplist[i].parent.type);
+
+                    // recurse on the next component at the same location (a wire)
+                    return this.dfs(cplist[i].parent, location, visited);
+
+                }
+            }
+
+        } else if (component.type == 'fuzz' || component.type == 'delay' || component.type == 'reverb') {
+            // continue onwards: CPs 0 and 2 connected, CPs 1 and 3 are connected
+
+            var id = -1; 
+            var complement = -1; 
+            // first find which CP we are at
+            for (var i = 0; i < component.connections.length; i++) {
+                if (component.connections[i].location == location) {
+                    // this is the i 
+                    id = i;
+                    break;
+                }
+            }
+
+
+            // hard code bc these effect pedals have only 4 connections
+            if (id == 0) {
+                complement = 2;
+            } else if (id == 1) {
+                complement = 3;
+            } else if (id == 2) {
+                complement = 0;
+            } else {
+                // id == 3
+                complement = 1;
+            }
+
+
+            console.log(id, complement);
+            // maybe(?) runs into a problem when you have two of the same types next to each other!!!
+            // need to change the 'node' label to something based on bbox: TODO
+
+            var other = component.type + component.connections[complement].location;
+            if (visited.has(other)) {
+                console.log('already seen other side of FB');
+                // have alredy seen the other side of the FB, so move on
+                var cplist = this.connection_points[location];
+                for (var i = 0; i < cplist.length; i++) {
+                    // if not this current component
+                    if (cplist[i].parent.bbox != component.bbox) {
+                        // only checking based on bbox (might change later?)
+                        // recurse on the next component at the same location (a wire)
+                        return this.dfs(cplist[i].parent, location, visited);
+                    }
+                }
+            } else {
+                console.log('trying to move within fb');
+                // move to other side of FB
+                var result = this.dfs(component, component.connections[complement].location, visited);
+                result.unshift(component.type);
+                return result;
+            }
+
+
+
+        } else if (component.type == 'w') {
+            // a wire: just move to next side of the wire if other side not visited.
+
+            for (var i = 0; i < component.connections.length; i++) {
+                if (component.connections[i].location != location){
+                    // check if other side already in visited
+                    var node = component.type + component.connections[i].location;
+                    if (visited.has(node)) {
+                        console.log("already seen other side of wire");
+                    } else {
+                        // if the other side, progress
+                        return this.dfs(component, component.connections[i].location, visited);
+                    }
+
+                }
+            }
+
+            // get component connected to this wire then
+            var cplist = this.connection_points[location];
+            for (var i = 0; i < cplist.length; i++) {
+                // if not this current wire node
+                if (cplist[i].parent.bbox != component.bbox) {
+                    // only checking based on bbox (might change later?)
+                    // recurse on the next component at the same location (a wire)
+                    return this.dfs(cplist[i].parent, location, visited);
+
+                }
+            }
+
+        } else {
+            // we're done! return the right label
+            var connects = component.connections;
+
+            for (var i = 0; i < connects.length; i++) {
+                if (connects[i].location == location) {
+                    return [connects[i].label];
+                }
+            }   
+        }
+    }
+
+
     Schematic.prototype.to_netlist = function() {
         // create the desired netlist for circuit simulator
         var json = [];
 
         var n = this.components.length;
-        for (var i = 0; i < n; i++)
-            json.push(this.components[i].to_netlist(i));
+
+        var vin = 0;
+
+        for (var i = 0; i < n; i++) {
+            if (this.components[i].type == 'Vin') {
+                vin = this.components[i];
+            } else if (this.components[i].type != 'fuzz' && this.components[i].type != 'delay' && this.components[i].type != 'reverb') {
+                // skip 'Vin', and all functional blocks 
+                json.push(this.components[i].to_netlist(i));
+            }
+        }
+
+        var s = new Set();
+
+        // run dfs on top node
+        var top = this.dfs(vin, vin.connections[0].location, s);
+
+        var funcBlockOrder = top.slice(0, top.length - 1);
+        var topLabel = top[top.length-1];
+
+        // console.log(funcBlockOrder);
+        // console.log(topLabel);
+        // run dfs on the bottom node  
+        s.clear();
+
+        var bot = this.dfs(vin, vin.connections[1].location, s);
+        var botLabel = bot[bot.length-1];
+        // console.log(botLabel);
+
+        // write vin
+        var vinJson = ["VOLTAGE_IN"];
+        vinJson.push('vin');
+        vinJson.push(topLabel);
+        vinJson.push(botLabel);
+        json.push(vinJson);
+
+        // write all the functional blocks
+        for (var i = 0; i < funcBlockOrder.length; i++) {
+            json.push([funcBlockOrder[i]]);
+        }
 
         return json;
     }
@@ -1931,7 +2074,21 @@ schematic = (function() {
     }
 
     Part.prototype.draw_text = function(c,text,x,y,size) {
-        // no text displayed for the parts icon
+
+        if (this.component.type == 'fuzz' || this.component.type == 'reverb' || this.component.type == 'delay') {
+
+            c.font = (size * 2) + 'pt sans-serif';
+
+            var t = this.component.properties['effect'].slice(0, 3);
+            var offset = 3;
+
+            c.fillText(t,(x - this.origin_x) * this.scale - offset,(y - this.origin_y) * this.scale);
+
+        } else if (this.component.type == 'Vin' || this.component.type == 'Vout') {
+            c.font = (size + 2) + 'pt sans-serif';
+            c.fillText(this.component.type, (x - this.origin_x) * this.scale + 2, (y - this.origin_y) * this.scale); 
+        }
+        
     }
 
     function part_enter(event) {
@@ -2319,7 +2476,7 @@ schematic = (function() {
     // clear the labels on all connections
     Component.prototype.clear_labels = function() {
         for (var i = this.connections.length - 1; i >=0; --i) {
-        this.connections[i].clear_label();
+            this.connections[i].clear_label();
         }
     }
 
@@ -2624,7 +2781,6 @@ schematic = (function() {
     }
 
     // give components a chance to generate a label for their connection(s)
-    // default action: do nothing
     Ground.prototype.add_default_labels = function() {
         this.connections[0].propagate_label('0');   // canonical label for GND node
     }
@@ -3053,6 +3209,7 @@ schematic = (function() {
 
         return json;
     }
+
     ////////////////////////////////////////////////////////////////////////////////
     //
     //  P-channel Mosfet
@@ -3166,6 +3323,137 @@ schematic = (function() {
     OpAmp.prototype.clone = function(x,y) {
         return new OpAmp(x,y,this.rotation,this.properties['name'],this.properties['A']);
     }
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    //  Functional Block
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+
+
+    function FunctionalBlock(x, y, rotation, name, effect, type) {
+        Component.call(this,'hi',x,y,rotation);
+
+        this.properties['name'] = name;
+        if (effect == undefined) effect = 'fuzz';
+        this.properties['effect'] = effect;
+        this.add_connection(-24, 16);
+        this.add_connection(-24, 32);
+        this.add_connection(24, 16);
+        this.add_connection(24, 32);
+        this.bounding_box = [-24, 0, 24, 48];
+        this.type = type;
+        this.update_coords();
+
+    }
+
+    FunctionalBlock.prototype = new Component();
+    FunctionalBlock.prototype.constructor = FunctionalBlock;
+
+    FunctionalBlock.prototype.toString = function() {
+        return '<'+this.type+'Functional Block '+this.properties['params']+' ('+this.x+','+this.y+')>';
+    }
+
+    FunctionalBlock.prototype.draw = function(c) {
+        // Component.prototype.draw.call(this,c);   // give superclass a shot
+        
+        this.draw_line(c, -16, 8, 16, 8);
+        this.draw_line(c, -16, 40, 16, 40);
+        this.draw_line(c, -16, 8, -16, 40);
+        this.draw_line(c, 16, 8, 16, 40);
+        this.draw_line(c, -24, 16, -16, 16);
+        this.draw_line(c, -24, 32, -16, 32);
+        this.draw_line(c, 24, 16, 16, 16);
+        this.draw_line(c, 24, 32, 16, 32);
+
+
+        if (this.properties['effect']) {
+            var offset = -6;
+            if (this.properties['effect'] == 'delay') {
+                offset = -8;
+            } else if (this.properties['effect'] == 'reverb') {
+                offset = -9;
+            };
+
+            this.draw_text(c,this.properties['effect'], offset,24,3,property_size);
+        }
+    }
+
+    FunctionalBlock.prototype.clone = function(x,y) {
+        // right now, effect and type are the same thing. may condense later (TODO)
+        return new FunctionalBlock(x,y,this.rotation,'fb',this.properties['effect'], this.properties['effect']);
+    }
+
+    FunctionalBlock.prototype.to_netlist = function(index) {
+        var json = [this.properties['effect']];
+        return json;
+    }
+
+    FunctionalBlock.prototype.to_netlist_fb = function(index) {
+        var json = [this.properties['effect']];
+        return json;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    //  Fuzz 
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+
+
+    function Fuzz(x, y, rotation, name) {
+        FunctionalBlock.call(this,x,y,rotation,name,'fuzz', 'fuzz'); 
+        this.type = 'fuzz';
+    }
+    
+    Fuzz.prototype = new Component();
+    Fuzz.prototype.constructor = Fuzz;
+    Fuzz.prototype.toString = FunctionalBlock.prototype.toString;
+    Fuzz.prototype.draw = FunctionalBlock.prototype.draw;
+    Fuzz.prototype.clone = FunctionalBlock.prototype.clone;
+    Fuzz.prototype.to_netlist = FunctionalBlock.prototype.to_netlist;
+
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    //  Delay 
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+
+
+    function Delay(x, y, rotation, name) {
+        FunctionalBlock.call(this,x,y,rotation,name, 'delay', 'delay');  
+        this.type = 'delay';
+
+    }
+    
+    Delay.prototype = new Component();
+    Delay.prototype.constructor = Delay;
+    Delay.prototype.toString = FunctionalBlock.prototype.toString;
+    Delay.prototype.draw = FunctionalBlock.prototype.draw;
+    Delay.prototype.clone = FunctionalBlock.prototype.clone;
+    Delay.prototype.to_netlist = FunctionalBlock.prototype.to_netlist;
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    //  Reverb 
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+
+
+    function Reverb(x, y, rotation, name) {
+        FunctionalBlock.call(this,x,y,rotation,name, 'reverb', 'reverb');  
+        this.type = 'reverb';
+    }
+    
+    Reverb.prototype = new Component();
+    Reverb.prototype.constructor = Reverb;
+    Reverb.prototype.toString = FunctionalBlock.prototype.toString;
+    Reverb.prototype.draw = FunctionalBlock.prototype.draw;
+    Reverb.prototype.clone = FunctionalBlock.prototype.clone;
+    Reverb.prototype.to_netlist = FunctionalBlock.prototype.to_netlist;
 
     ////////////////////////////////////////////////////////////////////////////////
     //
