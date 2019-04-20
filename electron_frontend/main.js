@@ -1,34 +1,131 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, shell} = require('electron')
+const {app, BrowserWindow, shell, Menu} = require('electron')
 
 const os = require('os')
+const { ipcMain } = require('electron');
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
 
-function createWindow () {
-  // Create the browser window.
-  mainWindow = new BrowserWindow({
-    width: 900,
-    height: 900,
-    webPreferences: {
-      nodeIntegration: true
+function deliver (code) {
+    return function (menuItem, currentWindow) {
+        currentWindow.webContents.send(code);
     }
-  })
+}
 
-  // and load the index.html of the app.
-  mainWindow.loadFile('index.html')
+function installMenu (window) {
 
-  // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+    const template = [
 
-  // Emitted when the window is closed.
-  mainWindow.on('closed', function () {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    mainWindow = null
-  })
+        // dummy menu that is needed to make things render right on MacOS...
+        {
+            label: "",
+        },
+
+        // file menu
+        {
+            label: "File",
+            submenu: [
+
+                // save the current circuit into project directory
+                {
+                    label: "Save",
+                    accelerator: "CmdOrCtrl+S",
+                    click: deliver('export-circuit'),
+                },
+
+                // quit the application
+                {
+                    label: "Quit",
+                    accelerator: "CmdOrCtrl+Q",
+                    role: 'quit',
+                },
+
+                {
+                    type: 'separator',
+                },
+
+                // import audio files
+                {
+                    label: "Import Audio",
+                },
+
+                // switch projects
+                {
+                    label: "Open Existing Project",
+                    click: deliver('import-circuit'),
+                },
+            ],
+        },
+
+        // tools menu
+        {
+            label: "Tools",
+            submenu: [
+
+                // start a new simulation
+                {
+                    label: "Launch Simulation",
+                    accelerator: "CmdOrCtrl+B",
+                    click: deliver('run-simulation'),
+                },
+
+                // play sound from an output file
+                {
+                    label: "Play Sound",
+                    click: deliver('playback'),
+                }
+            ],
+        },
+
+        // developer menu
+        {
+            label: "Developer",
+            submenu: [
+                {
+                    label: "View DevTools",
+                    accelerator: "CmdOrCtrl+J",
+                    role: 'toggleDevTools',
+                },
+
+                {
+                    label: "Reload",
+                    accelerator: "CmdOrCtrl+R",
+                    role: 'reload',
+                },
+            ]
+        },
+
+    ];
+
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+function createWindow () {
+    // Create the browser window.
+    mainWindow = new BrowserWindow({
+        width: 900,
+        height: 900,
+        webPreferences: { nodeIntegration: true },
+    });
+
+    // maximize the application
+    // mainWindow.setFullScreen(true);
+    mainWindow.maximize();
+
+    // and load the index.html of the app.
+    mainWindow.loadFile('index.html');
+
+    // Emitted when the window is closed.
+    mainWindow.on('closed', function () {
+        // Dereference the window object, usually you would store windows
+        // in an array if your app supports multi windows, this is the time
+        // when you should delete the corresponding element.
+        mainWindow = null
+    });
+
+    installMenu();
 }
 
 // This method will be called when Electron has finished

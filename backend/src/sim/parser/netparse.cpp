@@ -22,6 +22,7 @@
 #include <components/component.hpp>
 #include <errors.hpp>
 #include <sim.hpp>
+#include <stdio.h>
 
 using std::vector;
 using std::string;
@@ -186,7 +187,7 @@ static AudioManager::input_t get_input_source(simparams_t *params) {
 
     if (params->signal_file != NULL) {
         return AudioManager::INPUT_FILE;
-    } else if (params->live_output) {
+    } else if (params->live_input) {
         return AudioManager::INPUT_HARDWARE;
     } else {
         sim_error("invalid input parameters\n");
