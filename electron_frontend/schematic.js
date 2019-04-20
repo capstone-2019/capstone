@@ -101,8 +101,9 @@ function startTimer () {
 function stopSimulator () {
     var pid = window.simpid;
     var command = "kill -SIGUSR1 " + window.simpid.toString();
-    alert("about to run: " + command);
-    shell_cmd.exec(command);
+    if (pid > 0) {
+        shell_cmd.exec(command);
+    }
     window.simulationRunning = false;
     window.simpid = -1;
 }
