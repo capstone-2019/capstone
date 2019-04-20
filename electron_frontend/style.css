@@ -1,3 +1,7 @@
+/****************************************************************************
+ *                         Schematic Layout/Styling                         *
+ ****************************************************************************/
+
 .schematic-table {
 	position: absolute;
 	top: 50%;
@@ -20,7 +24,6 @@
 	top: 50%;
 	position: absolute;
 	max-width: 100px;
-	/*width: 100px;*/
 	transform: translate(-100%, -50%);
 }
 
@@ -30,27 +33,34 @@
 	display: hidden;
 }
 
-/* The Modal (background) */
-.modal {
-  display: none; /* Hidden by default */
-  position: fixed; /* Stay in place */
-  z-index: 1; /* Sit on top */
-  left: 0;
-  top: 0;
-  width: 100%; /* Full width */
-  height: 100%; /* Full height */
-  overflow: auto; /* Enable scroll if needed */
-  background-color: rgb(0,0,0); /* Fallback color */
-  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+html {
+    overflow: hidden;
+    font-family: 'Roboto', sans-serif;
 }
 
-/* Modal Content/Box */
+/****************************************************************************
+ *                             Live Audio Modal                             *
+ ****************************************************************************/
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgb(0,0,0);
+  background-color: rgba(0,0,0,0.4);
+}
+
 .modal-content {
   background-color: #fefefe;
-  margin: 15% auto; /* 15% from the top and centered */
+  margin: 15% auto;
   padding: 20px;
   border: 1px solid #888;
-  width: 50%; /* Could be more or less, depending on screen size */
+  width: 50%;
   max-width: 500px;
   position: relative;
 }
@@ -65,19 +75,18 @@
 	text-align: center;
 }
 
-/* The Close Button */
 .close {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
 }
 
 .close:hover,
 .close:focus {
-  color: black;
-  text-decoration: none;
-  cursor: pointer;
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
 }
 
 .button-stop {
@@ -108,41 +117,72 @@
 	background: #f26a6c;
 }
 
-button{
-  border:none;
-  position:relative;
-  height:60px;
-  font-size:1.0em;
-  padding:0 2em;
-  cursor:pointer;
-  transition:800ms ease all;
-  outline:none;
-  width: 200px;
-  display: inline-block;
-  margin: 10px;
+button {
+    border:none;
+    position:relative;
+    height:60px;
+    font-size:1.0em;
+    padding:0 2em;
+    cursor:pointer;
+    transition:800ms ease all;
+    outline:none;
+    width: 200px;
+    display: inline-block;
+    margin: 10px;
 }
 
-button:before,button:after{
-  content:'';
-  position:absolute;
-  top:0;
-  right:0;
-  height:2px;
-  width:0;
-  transition:400ms ease all;
+button:before,
+button:after{
+    content:'';
+    position:absolute;
+    top:0;
+    right:0;
+    height:2px;
+    width:0;
+    transition:400ms ease all;
 }
 button:after{
-  right:inherit;
-  top:inherit;
-  left:0;
-  bottom:0;
-}
-button:hover:before,button:hover:after{
-  width:100%;
-  transition:800ms ease all;
+    right:inherit;
+    top:inherit;
+    left:0;
+    bottom:0;
 }
 
-html {
-	overflow: hidden;
-	font-family: 'Roboto', sans-serif;
+button:hover:before,
+button:hover:after{
+    width:100%;
+    transition:800ms ease all;
+}
+
+/****************************************************************************
+ *                               Slider Bars                                *
+ ****************************************************************************/
+
+.slidecontainer {
+    width: 100%; /* Width of the outside container */
+}
+
+.slider {
+    -webkit-appearance: none;  /* Override default CSS styles */
+    appearance: none;
+    width: 100%; /* Full-width */
+    height: 25px; /* Specified height */
+    background: #d3d3d3; /* Grey background */
+    outline: none; /* Remove outline */
+    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+    transition: opacity .2s;
+}
+
+.slider:hover {
+    opacity: 1; /* Fully shown on mouse-over */
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    width: 25px; /* Set a specific slider handle width */
+    height: 25px; /* Slider handle height */
+    background: #4CAF50; /* Green background */
+    cursor: pointer; /* Cursor on hover */
 }

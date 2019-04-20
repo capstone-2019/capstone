@@ -88,6 +88,12 @@ function installMenu (window) {
                     accelerator: "CmdOrCtrl+J",
                     role: 'toggleDevTools',
                 },
+
+                {
+                    label: "Reload",
+                    accelerator: "CmdOrCtrl+R",
+                    role: 'reload',
+                },
             ]
         },
 
