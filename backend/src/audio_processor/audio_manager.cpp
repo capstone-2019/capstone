@@ -18,23 +18,15 @@
 using std::string;
 using std::vector;
 
+using std::vector;
+using std::string;
+
 static std::mutex m;
 static std::condition_variable cv;
 
-float cubic_amplifier(float x) {
-	if (x < 0.f) {
-		x += 1.f;
-		x = x * x * x - 1.f;
-	} else {
-		x -= 1.f;
-		x = x * x * x + 1.f;
-	}
-	return x;
-}
-
-float fuzz(float x) {
-	return cubic_amplifier(cubic_amplifier(cubic_amplifier(cubic_amplifier(x))));
-}
+/****************************************************************************
+ *                    audio hardware callback function                      *
+ ****************************************************************************/
 
 static int callBack(const void *inputBuffer, void *outputBuffer,
 					unsigned long framesPerBuffer,
@@ -44,8 +36,8 @@ static int callBack(const void *inputBuffer, void *outputBuffer,
 
 	AudioManager::callback_data *data = (AudioManager::callback_data*) userData;
 
-	// printf("callback. data->num_frames %d\n", data->num_frames);
 	float total;
+
 
 	if (data->in) {
 		AudioManager::buffer b;
@@ -55,7 +47,7 @@ static int callBack(const void *inputBuffer, void *outputBuffer,
 			for (int j = 0; j < NUM_CHANNELS; j++) {
 				total += ((float*)inputBuffer)[NUM_CHANNELS*i];
 			}
-			b.buf[i] = fuzz(total / ((float) NUM_CHANNELS));
+			b.buf[i] = (total / ((float) NUM_CHANNELS));
 		}
 		data->hw_input_buf.push(b); //TODO: Emplace? push?
 		data->num_frames += framesPerBuffer;
@@ -74,6 +66,11 @@ static int callBack(const void *inputBuffer, void *outputBuffer,
 
 	return !data->done ? 0 : paComplete;
 }
+
+/****************************************************************************
+ *                             helper functions                             *
+ ****************************************************************************/
+
 
 static PaStream* portaudio_init_hw(AudioManager::callback_data *data) {
 
@@ -114,6 +111,25 @@ static PaStream* portaudio_init_hw(AudioManager::callback_data *data) {
 }
 
 
+/****************************************************************************
+ *                              API functions                               *
+ ****************************************************************************/
+
+float AudioManager::apply_effects(float val, vector<string> effects) {
+
+	for (auto it = effects.begin(); it < effects.end(); ++it) {
+		if (*it == "REVERB") {
+			sim_error("not yet implemented\n");
+		} else if (*it == "FUZZ") {
+			val = reverb.apply((val));
+		} else {
+			sim_error("invalid pre-effect\n");
+		}
+	}
+
+	return val;
+}
+
 AudioManager::AudioManager(input_t input_mode, output_t output_mode,
 			 const char *input_filename, const char *output_filename,
 			 filetype_t infile_type,
@@ -125,6 +141,7 @@ AudioManager::AudioManager(input_t input_mode, output_t output_mode,
 	data->out = false;
 	data->done = false;
 	this->output_mode = output_mode;
+	effects = effect_blocks;
 
 	/* initialize input */
 	/* TODO: Support hardware modes things */
@@ -209,14 +226,25 @@ bool AudioManager::hw_get_next_value(double *val) {
 }
 
 bool AudioManager::get_next_value(double *val) {
+
+	bool ret;
+
 	if (input_mode == INPUT_FILE)
-		return file_get_next_value(val);
+		ret = file_get_next_value(val);
 	else if (input_mode == INPUT_HARDWARE) {
-		return hw_get_next_value(val);
+		ret = hw_get_next_value(val);
 	} else {
 		assert(false);
 	}
-	return false;
+
+	*val = (float) apply_effects((float) *val, effects);
+
+	// static int count = 0;
+
+	// if (count++ == 44100*6) {
+	// 	return false;
+	// }
+	return ret;
 }
 
 void AudioManager::file_set_next_value(double val) {
@@ -239,6 +267,8 @@ void AudioManager::set_next_value(double val) {
 }
 
 void AudioManager::finish() {
+	printf("in finish\n");
+	printf("fout is %p\n", fout);
 	if (fout != NULL) {
 		fout->finish();
 	}

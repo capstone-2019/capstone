@@ -13,10 +13,17 @@
 #include <input_interface.hpp>
 #include <file_output.hpp>
 #include <queue>
+#include <fuzz.hpp>
 #include <vector>
 #include <string>
+#include <distortion.hpp>
+#include <delay.hpp>
+#include <reverb.hpp>
 
 #include "portaudio.h"
+
+using std::vector;
+using std::string;
 
 #define HW_FRAMES_PER_BUFFER 512
 #define HW_SAMPLERATE 44100
@@ -103,6 +110,13 @@ private:
 	int output_index;
 	output_t output_mode;
 
+	/* effects */
+	vector<string> effects;
+	float apply_effects(float val, vector<string> effects);
+	Fuzz fuzz;
+	Distortion distortion;
+	Delay delay;
+	Reverb reverb;
 
 };
 

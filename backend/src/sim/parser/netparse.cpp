@@ -184,6 +184,7 @@ string NetlistIterator::remove_comments(const string& line) {
 
 
 static AudioManager::input_t get_input_source(simparams_t *params) {
+
     if (params->signal_file != NULL) {
         return AudioManager::INPUT_FILE;
     } else if (params->live_input) {
@@ -198,7 +199,7 @@ static AudioManager::output_t get_outputs(simparams_t *params) {
 
     AudioManager::output_t ret = 0;
 
-    if (params->signal_file != NULL) {
+    if (params->outfile != NULL) {
         ret |= AudioManager::OUTPUT_FILE;
     }
 
