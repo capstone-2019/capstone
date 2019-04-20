@@ -16,6 +16,9 @@
 #include <fuzz.hpp>
 #include <vector>
 #include <string>
+#include <distortion.hpp>
+#include <delay.hpp>
+#include <reverb.hpp>
 
 #include "portaudio.h"
 
@@ -111,6 +114,9 @@ private:
 	vector<string> effects;
 	float apply_effects(float val, vector<string> effects);
 	Fuzz fuzz;
+	Distortion distortion;
+	Delay delay;
+	Reverb reverb;
 
 };
 

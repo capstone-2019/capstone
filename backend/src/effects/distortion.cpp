@@ -10,12 +10,23 @@
  */
 
 #include <distortion.hpp>
+#include <cmath>
 
 // float boost(float val) {
 
 // }
 
+// Distortion::Distortion(int boost, int drive, int tone) {
+
+// }
+
 
 float Distortion::apply(float val) {
-	return 0.f;
+	float k, a;
+	float drive = 5000.f;
+
+	a = sin(((drive + 1)/ 101) * (M_PI/2));
+	k = 2 * a / (1 - a);
+
+	return (1 + k) * val / (1 + k * abs(val));
 }

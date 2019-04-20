@@ -5,8 +5,8 @@
  *	@author Joseph Kim (youngchk)
  */
 
-#ifndef _FUZZ_H_
-#define _FUZZ_H_
+#ifndef _DISTORTION_H_
+#define _DISTORTION_H_
 
 #include <effect.hpp>
 
@@ -21,10 +21,10 @@ public:
 
 private:
 
-	float boost;
+	float gain;
 	float drive;
 	float tone;
 
 };
 
-#endif /* _FUZZ_H_ */
+#endif /* _DISTORTION_H_ */

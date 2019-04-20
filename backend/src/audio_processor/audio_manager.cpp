@@ -121,7 +121,7 @@ float AudioManager::apply_effects(float val, vector<string> effects) {
 		if (*it == "REVERB") {
 			sim_error("not yet implemented\n");
 		} else if (*it == "FUZZ") {
-			val = fuzz.apply(val);
+			val = reverb.apply((val));
 		} else {
 			sim_error("invalid pre-effect\n");
 		}
@@ -239,6 +239,11 @@ bool AudioManager::get_next_value(double *val) {
 
 	*val = (float) apply_effects((float) *val, effects);
 
+	// static int count = 0;
+
+	// if (count++ == 44100*6) {
+	// 	return false;
+	// }
 	return ret;
 }
 
@@ -262,6 +267,8 @@ void AudioManager::set_next_value(double val) {
 }
 
 void AudioManager::finish() {
+	printf("in finish\n");
+	printf("fout is %p\n", fout);
 	if (fout != NULL) {
 		fout->finish();
 	}
