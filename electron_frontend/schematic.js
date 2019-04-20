@@ -1139,7 +1139,7 @@ schematic = (function() {
 
         // write all the functional blocks
         for (var i = 0; i < funcBlockOrder.length; i++) {
-            json.push([funcBlockOrder[i]]);
+            json.push([funcBlockOrder[i].toUpperCase()]);
         }
 
         return json;
