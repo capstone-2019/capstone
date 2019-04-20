@@ -181,8 +181,6 @@ function manage_project() {
             return;
         }
 
-        console.log(choice);
-        console.log(folder);
         window.projectFolder = folder;
 
         var command = "mkdir " + folder;
@@ -704,7 +702,6 @@ schematic = (function() {
 
 
     Schematic.prototype.import_circuit = function() {
-        console.log(window.projectFolder);
         var filename = window.projectFolder + '/circuit.txt';
 
         fs.readFile(filename, 'utf-8', (err, data) => {
@@ -713,9 +710,7 @@ schematic = (function() {
                 this.redraw_background();
                 return;
             }
-            console.log(data);
 
-            console.log(this);
             if (this.components !== undefined) {
                 for (var i = this.components.length - 1; i >=0; --i) {
                     var c = this.components[i];
@@ -730,11 +725,8 @@ schematic = (function() {
         });
     }
 
-
-
     Schematic.prototype.import = function() {
 
-        console.log("hi im importing");
         // wants to open a folder
         var folder = dialog.showOpenDialog({
             properties: ['openDirectory']
@@ -745,29 +737,16 @@ schematic = (function() {
             return;
         }
 
-        console.log(folder[0]);
         window.projectFolder = folder[0];
 
         this.import_circuit();
 
     }
 
-
-
-    Schematic.prototype.simplify_labels = function(component) {
-        // find out the real labels for Vin and Vout
-
-        return
-
-
-
-    }
     // creates two files: the netlist file for circuit sim, and circuit file for import
     Schematic.prototype.export = function() {
         // give all the circuit nodes a name, extract netlist
         this.label_connection_points();
-
-        console.log(window.projectFolder);
 
         var netlist = this.to_netlist();
         var result = [];
@@ -848,20 +827,6 @@ schematic = (function() {
             openLiveAudioModal();
         }
 
-
-
-/*
-        // two ways of executing cmd line args
-        // first way spawns a child process; output visible in terminal
-        shell_cmd.exec('python test.py 1 2', (output) => {
-            console.log(output);
-        })
-
-        // just a call to execute: output visible in 'browser' / electron console
-        execute('python test.py 3 4', (output) => {
-            console.log(output);
-        })
-*/
         this.enable_tool('run_simulation', true);
     }
 
@@ -908,8 +873,6 @@ schematic = (function() {
         if (value && value.indexOf('[') != -1) {
             // convert string value into data structure
             var json = JSON.parse(value);
-            console.log(value);
-            console.log(json);
 
             // top level is a list of components
             for (var i = json.length - 1; i >= 0; --i) {
@@ -929,9 +892,6 @@ schematic = (function() {
                 var coords = c[2];
                 var properties = c[3];
 
-
-                console.log(type);
-                console.log(c);
                 var part = new parts_map[type][0](coords[0],coords[1],coords[2]);
 
                 // give it its properties
@@ -1008,16 +968,179 @@ schematic = (function() {
         return json;
     }
 
+
+
+
+    // TODO
+    // component and location define a 'state'
+    Schematic.prototype.dfs = function(component, location, visited) {
+        // find out the real labels for Vin and Vout
+        
+        // first add your current location in visited
+
+        var current = component.type + location;
+        visited.add(current);
+
+        console.log(visited);
+        console.log(component);
+
+        if (component.type == 'Vin') {
+            // start this shit
+
+            var cplist = this.connection_points[location];
+            for (var i = 0; i < cplist.length; i++) {
+                if (cplist[i].parent.type != 'Vin') {
+                    console.log("not in vin");
+                    console.log(cplist[i].parent.type);
+
+                    // recurse on the next component at the same location (a wire)
+                    return this.dfs(cplist[i].parent, location, visited);
+
+                }
+            }
+
+        } else if (component.type == 'fuzz' || component.type == 'delay' || component.type == 'reverb') {
+            // continue onwards: CPs 0 and 2 connected, CPs 1 and 3 are connected
+
+            var id = -1; 
+            var complement = -1; 
+            // first find which CP we are at
+            for (var i = 0; i < component.connections.length; i++) {
+                if (component.connections[i].location == location) {
+                    // this is the i 
+                    id = i;
+                    break;
+                }
+            }
+
+
+            // hard code bc these effect pedals have only 4 connections
+            if (id == 0) {
+                complement = 2;
+            } else if (id == 1) {
+                complement = 3;
+            } else if (id == 2) {
+                complement = 0;
+            } else {
+                // id == 3
+                complement = 1;
+            }
+
+
+            console.log(id, complement);
+            // maybe(?) runs into a problem when you have two of the same types next to each other!!!
+            // need to change the 'node' label to something based on bbox: TODO
+
+            var other = component.type + component.connections[complement].location;
+            if (visited.has(other)) {
+                console.log('already seen other side of FB');
+                // have alredy seen the other side of the FB, so move on
+                var cplist = this.connection_points[location];
+                for (var i = 0; i < cplist.length; i++) {
+                    // if not this current component
+                    if (cplist[i].parent.bbox != component.bbox) {
+                        // only checking based on bbox (might change later?)
+                        // recurse on the next component at the same location (a wire)
+                        return this.dfs(cplist[i].parent, location, visited);
+                    }
+                }
+            } else {
+                console.log('trying to move within fb');
+                // move to other side of FB
+                var result = this.dfs(component, component.connections[complement].location, visited);
+                result.unshift(component.type);
+                return result;
+            }
+
+
+
+        } else if (component.type == 'w') {
+            // a wire: just move to next side of the wire if other side not visited.
+
+            for (var i = 0; i < component.connections.length; i++) {
+                if (component.connections[i].location != location){
+                    // check if other side already in visited
+                    var node = component.type + component.connections[i].location;
+                    if (visited.has(node)) {
+                        console.log("already seen other side of wire");
+                    } else {
+                        // if the other side, progress
+                        return this.dfs(component, component.connections[i].location, visited);
+                    }
+
+                }
+            }
+
+            // get component connected to this wire then
+            var cplist = this.connection_points[location];
+            for (var i = 0; i < cplist.length; i++) {
+                // if not this current wire node
+                if (cplist[i].parent.bbox != component.bbox) {
+                    // only checking based on bbox (might change later?)
+                    // recurse on the next component at the same location (a wire)
+                    return this.dfs(cplist[i].parent, location, visited);
+
+                }
+            }
+
+        } else {
+            // we're done! return the right label
+            var connects = component.connections;
+
+            for (var i = 0; i < connects.length; i++) {
+                if (connects[i].location == location) {
+                    return [connects[i].label];
+                }
+            }   
+        }
+    }
+
+
     Schematic.prototype.to_netlist = function() {
         // create the desired netlist for circuit simulator
         var json = [];
 
         var n = this.components.length;
 
-        console.log(this.components);
+        var vin = 0;
 
-        for (var i = 0; i < n; i++)
-            json.push(this.components[i].to_netlist(i));
+        for (var i = 0; i < n; i++) {
+            if (this.components[i].type == 'Vin') {
+                vin = this.components[i];
+            } else if (this.components[i].type != 'fuzz' && this.components[i].type != 'delay' && this.components[i].type != 'reverb') {
+                // skip 'Vin', and all functional blocks 
+                json.push(this.components[i].to_netlist(i));
+            }
+        }
+
+        var s = new Set();
+
+        // run dfs on top node
+        var top = this.dfs(vin, vin.connections[0].location, s);
+
+        var funcBlockOrder = top.slice(0, top.length - 1);
+        var topLabel = top[top.length-1];
+
+        // console.log(funcBlockOrder);
+        // console.log(topLabel);
+        // run dfs on the bottom node  
+        s.clear();
+
+        var bot = this.dfs(vin, vin.connections[1].location, s);
+        var botLabel = bot[bot.length-1];
+        // console.log(botLabel);
+
+        // write vin
+        var vinJson = ["VOLTAGE_IN"];
+        vinJson.push('vin');
+        vinJson.push(topLabel);
+        vinJson.push(botLabel);
+        json.push(vinJson);
+
+        // write all the functional blocks
+        for (var i = 0; i < funcBlockOrder.length; i++) {
+            json.push([funcBlockOrder[i]]);
+        }
 
         return json;
     }
@@ -2338,7 +2461,7 @@ schematic = (function() {
     // clear the labels on all connections
     Component.prototype.clear_labels = function() {
         for (var i = this.connections.length - 1; i >=0; --i) {
-        this.connections[i].clear_label();
+            this.connections[i].clear_label();
         }
     }
 
@@ -2643,7 +2766,6 @@ schematic = (function() {
     }
 
     // give components a chance to generate a label for their connection(s)
-    // default action: do nothing
     Ground.prototype.add_default_labels = function() {
         this.connections[0].propagate_label('0');   // canonical label for GND node
     }
