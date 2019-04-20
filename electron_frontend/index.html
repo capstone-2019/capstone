@@ -2,22 +2,41 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>Hello World!</title>
+    <title>Stairway to Hamerschlag - Guitar Effect Simulator</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel = "stylesheet" type = "text/css" href = "style.css" />
 
     <script type="text/javascript" src="schematic.js"></script>
 
   </head>
-  <body>
-    Node.js <script>document.write(process.versions.node)</script>,
-    Chromium <script>document.write(process.versions.chrome)</script>,
-    and Electron <script>document.write(process.versions.electron)</script>.
+  <body style="width: 100vw; height: 100vh">
 
     <script>
       // You can also require other files to run in this process
       require('./renderer.js')
     </script>
 
-    <input type="hidden" class="schematic" name="schematic1" width="800" height="600"/>
+    <input id="schematic-input" type="hidden" class="schematic" name="schematic1" style="width:100%; height: 100%"/>
+    <div class="dummy" id="dummy"> </div>
+
+    <div id="myModal" class="modal">
+
+      <!-- Modal content -->
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3 class="live-title">Live Audio Simulation</h3>
+        <p style="width: 100%; text-align: center;">
+          Duration - <span id="sim-duration">0:00</span>
+        </p>
+        <div class="button-holder">
+          <button class="button-start" id="btn-start">Start</button>
+          <button class="button-stop" id="btn-stop">Stop</button>
+        </div>
+      </div>
+
+    </div>
+
+
 
   </body>
 </html>

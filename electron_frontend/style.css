@@ -1,0 +1,148 @@
+.schematic-table {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 90%;
+	height: 90%;
+
+}
+
+.schematic-wrapper {
+	width: 100vw;
+	height: 100vh;
+}
+
+.schematic-rightbar {
+	margin: 0;
+	padding: 0;
+	left: 100%;
+	top: 50%;
+	position: absolute;
+	max-width: 100px;
+	/*width: 100px;*/
+	transform: translate(-100%, -50%);
+}
+
+.dummy {
+	width: 100%;
+	height: 100%;
+	display: hidden;
+}
+
+/* The Modal (background) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content/Box */
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 50%; /* Could be more or less, depending on screen size */
+  max-width: 500px;
+  position: relative;
+}
+
+.live-title {
+	width: 100%;
+	text-align: center;
+}
+
+.button-holder {
+	width: 100%;
+	text-align: center;
+}
+
+/* The Close Button */
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button-stop {
+	background: #f26a6c;
+	color: #fff;
+}
+
+.button-stop:hover {
+	color: #f26a6c;
+	background: #fff;
+}
+
+.button-start {
+	background:#1AAB8A;
+  	color:#fff;
+}
+
+.button-start:hover {
+	background:#fff;
+  	color:#1AAB8A;
+}
+
+.button-start:before,.button-start:after {
+	background: #1AAB8A;
+}
+
+.button-stop:before,.button-stop:after {
+	background: #f26a6c;
+}
+
+button{
+  border:none;
+  position:relative;
+  height:60px;
+  font-size:1.0em;
+  padding:0 2em;
+  cursor:pointer;
+  transition:800ms ease all;
+  outline:none;
+  width: 200px;
+  display: inline-block;
+  margin: 10px;
+}
+
+button:before,button:after{
+  content:'';
+  position:absolute;
+  top:0;
+  right:0;
+  height:2px;
+  width:0;
+  transition:400ms ease all;
+}
+button:after{
+  right:inherit;
+  top:inherit;
+  left:0;
+  bottom:0;
+}
+button:hover:before,button:hover:after{
+  width:100%;
+  transition:800ms ease all;
+}
+
+html {
+	overflow: hidden;
+	font-family: 'Roboto', sans-serif;
+}

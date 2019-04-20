@@ -6,7 +6,7 @@
 
 // Copyright (C) 2011 Massachusetts Institute of Technology
 
-// add schematics to a document with 
+// add schematics to a document with
 //
 //   <input type="hidden" class="schematic" name="unique_form_id" value="JSON netlist..." .../>
 //
@@ -41,12 +41,104 @@ const os = require('os')
 const exec = require('child_process').exec;
 const shell_cmd = require('./shell.js');
 const { dialog } = require('electron').remote;
+const { ipcRenderer } = require('electron');
 
 function execute(command, callback) {
-    exec(command, (error, stdout, stderr) => { 
-        callback(stdout); 
+    exec(command, (error, stdout, stderr) => {
+        callback(stdout);
     });
 };
+
+
+
+
+/****************************************************************************
+ *                            Live Audio Support                            *
+ ****************************************************************************/
+
+function stopTimer () {
+    if (window.timer) {
+        clearInterval(window.timer);
+    }
+    window.elapsed = 0;
+}
+
+function startTimer () {
+    stopTimer();
+
+    update = function () {
+        window.elapsed++;
+
+        var mins = Math.floor(window.elapsed / 60);
+        if (mins == 0) {
+            mins = "00";
+        } else if (mins < 10) {
+            mins = "0" + mins.toString();
+        } else {
+            mins = mins.toString();
+        }
+
+        var secs = window.elapsed % 60;
+        if (secs == 0) {
+            secs = "00";
+        } else if (secs < 10) {
+            secs = "0" + secs.toString();
+        } else {
+            secs = secs.toString();
+        }
+
+        console.log("END: mins = ", mins, " secs = ", secs);
+
+        var timePassed = mins + ":" + secs
+        console.log("time passed: ", timePassed);
+        var timespan = document.getElementById("sim-duration");
+        timespan.innerHTML = timePassed;
+    }
+
+    window.timer = setInterval(update, 1000);
+}
+
+function stopSimulator () {
+    var pid = window.simpid;
+    var command = "kill -SIGUSR1 " + window.simpid.toString();
+    alert("about to run: " + command);
+    shell_cmd.exec(command);
+    window.simulationRunning = false;
+    window.simpid = -1;
+}
+
+function openLiveAudioModal () {
+
+    /* find the modal and close button in DOM */
+    var modal = document.getElementById('myModal');
+    var span = document.getElementsByClassName("close")[0];
+
+    /* show the modal */
+    modal.style.display = "block";
+
+    /* when close button is pressed, hide the modal */
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    var start_btn = document.getElementById("btn-start");
+    var stop_btn = document.getElementById("btn-stop");
+
+    start_btn.addEventListener('click', function () {
+        startTimer();
+        window.simulationRunning = true;
+        window.simpid = shell_cmd.exec(window.command);
+    });
+
+    stop_btn.addEventListener('click', function () {
+        stopTimer();
+        stopSimulator();
+    });
+}
+
+/****************************************************************************
+ *                             Schematic Module                             *
+ ****************************************************************************/
 
 // set up each schematic entry widget
 function update_schematics() {
@@ -62,6 +154,7 @@ function update_schematics() {
                 msgdiv.style.margins = '20px';
                 msgdiv.style.padding = '20px';
                 var msg = document.createTextNode('Sorry, there a browser error in starting the schematic tool.  The tool is known to be compatible with the latest versions of Firefox and Chrome, which we recommend you use.');
+                console.log(err);
                 msgdiv.appendChild(msg);
                 schematics[i].parentNode.insertBefore(msgdiv,schematics[i]);
             }
@@ -78,7 +171,7 @@ function manage_project() {
 
     var choice = dialog.showMessageBox(null, select);
 
-    // choice == 0 if user wants to start a new project 
+    // choice == 0 if user wants to start a new project
     if (choice == 0) {
         var folder = dialog.showSaveDialog();
 
@@ -97,7 +190,7 @@ function manage_project() {
         });
 
     } else {
-       
+
         schematic.import();
     }
 }
@@ -108,17 +201,20 @@ function add_schematic_handler(other_onload) {
     return function() {
         // execute othe onload functions first
         if (other_onload) other_onload();
-    
+
         update_schematics();
         manage_project();
-
+        window.simulationRunning = false;
+        window.simpid = -1;
+        window.timer = null;
+        window.elapsed = 0;
     }
 }
 window.onload = add_schematic_handler(window.onload);
 
 
 schematic = (function() {
-    background_style = 'rgb(136,210,242)';
+    background_style = 'white';
     //background_style = 'rgb(220,220,220)';
     element_style = 'rgb(255,255,255)';
     thumb_style = 'rgb(128,128,128)';
@@ -157,6 +253,14 @@ schematic = (function() {
     //
     ////////////////////////////////////////////////////////////////////////////////
 
+    function getInnerWidth(elem) {
+        return parseFloat(window.getComputedStyle(elem).width);
+    }
+
+    function getInnerHeight(elem) {
+        return parseFloat(window.getComputedStyle(elem).height);
+    }
+
     // setup a schematic by populating the <div> with the appropriate children
     function Schematic(input) {
         // set up diagram viewing parameters
@@ -169,7 +273,7 @@ schematic = (function() {
 
 
         var parts = new Array();
-        for (var p in parts_map) parts.push(p); 
+        for (var p in parts_map) parts.push(p);
 
         // now add the parts to the parts bin
         this.parts_bin = [];
@@ -188,32 +292,31 @@ schematic = (function() {
         this.tools = new Array();
         this.toolbar = [];
 
-        this.tools['help'] = this.add_tool(help_icon,'Help: display help page',this.help);
-        this.enable_tool('help',true);
-        this.toolbar.push(null);  // spacer
+        // this.tools['help'] = this.add_tool(help_icon,'Help: display help page',this.help);
+        // this.enable_tool('help',true);
+        // this.toolbar.push(null);  // spacer
 
-        // add netlist and circuit export, import to toolbar 
-        this.tools['import'] = this.add_tool(import_icon, 'Import: import a circuit from file system', this.import);
-        this.enable_tool('import', true);
-        this.tools['export'] = this.add_tool(export_icon, 'Export: export netlist and circuit to file sytem', this.export);
-        this.enable_tool('export', true);
-        this.toolbar.push(null);  // spacer
- 
-        // add run_simulation and play to toolbar
-        this.tools['run_simulation'] = this.add_tool(simulate_icon, 'Run Simluation: take the current circuit and simulate a signal through it', this.run_simulation);
-        this.enable_tool('run_simulation', true);
-        this.tools['play'] = this.add_tool(play_icon, 'Play: Listen to a sound passed through a simulated circuit', this.play);
-        this.enable_tool('play', true);
-        this.toolbar.push(null); 
+        // // add netlist and circuit export, import to toolbar
+        // this.tools['import'] = this.add_tool(import_icon, 'Import: import a circuit from file system', this.import);
+        // this.enable_tool('import', true);
+        // this.tools['export'] = this.add_tool(export_icon, 'Export: export netlist and circuit to file sytem', this.export);
+        // this.enable_tool('export', true);
+        // this.toolbar.push(null);  // spacer
+
+        // // add run_simulation and play to toolbar
+        // this.tools['run_simulation'] = this.add_tool(simulate_icon, 'Run Simluation: take the current circuit and simulate a signal through it', this.run_simulation);
+        // this.enable_tool('run_simulation', true);
+        // this.tools['play'] = this.add_tool(play_icon, 'Play: Listen to a sound passed through a simulated circuit', this.play);
+        // this.enable_tool('play', true);
+        // this.toolbar.push(null);
 
 
         // set up diagram canvas
         this.canvas = document.createElement('canvas');
-        this.width = input.getAttribute('width');
-        this.width = parseInt(this.width == undefined ? '800' : this.width);
+        var dummyelem = document.getElementById('dummy');
+        this.width = 0.90 * getInnerWidth(dummyelem) - 53;
         this.canvas.width = this.width;
-        this.height = input.getAttribute('height');
-        this.height = parseInt(this.height == undefined ? '600' : this.height);
+        this.height = 0.90 * getInnerHeight(dummyelem);
         this.canvas.height = this.height;
 
         // repaint simply draws this buffer and then adds selected elements on top
@@ -236,12 +339,12 @@ schematic = (function() {
         this.canvas.addEventListener('dblclick',schematic_double_click,false);
         this.canvas.addEventListener('keydown',schematic_key_down,false);
         this.canvas.addEventListener('keyup',schematic_key_up,false);
-        
+
         // set up message area
-        this.status_div = document.createElement('div');
-        this.status = document.createTextNode('');
-        this.status_div.appendChild(this.status);
-        this.status_div.style.height = status_height + 'px';
+        // this.status_div = document.createElement('div');
+        // this.status = document.createTextNode('');
+        // this.status_div.appendChild(this.status);
+        // this.status_div.style.height = status_height + 'px';
 
         this.connection_points = new Array();  // location string => list of cp's
         this.components = [];
@@ -269,13 +372,15 @@ schematic = (function() {
         // set up DOM -- use nested tables to do the layout
         var table,tr,td;
         table = document.createElement('table');
+        table.classList.add("schematic-table");
+
         table.rules = 'none';
         table.frame = 'box';
         table.style.borderStyle = 'solid';
         table.style.borderWidth = '0px';
         table.style.borderColor = normal_style;
         table.style.backgroundColor = background_style;
-        
+
 
         // add tools to DOM
         if (this.toolbar.length > 0) {
@@ -290,7 +395,7 @@ schematic = (function() {
                 if (tool != null) td.appendChild(tool);
             }
         }
-        
+
         // add canvas and parts bin to DOM
         tr = document.createElement('tr');
         table.appendChild(tr);
@@ -303,9 +408,12 @@ schematic = (function() {
         wrapper.appendChild(this.canvas);
 
         td = document.createElement('td');
-        td.style.verticalAlign = 'top';
+        // td.style.verticalAlign = 'top';
+
+        td.classList.add('schematic-rightbar');
         tr.appendChild(td);
         var parts_table = document.createElement('table');
+        parts_table.classList.add('parts-list');
         td.appendChild(parts_table);
         parts_table.rules = 'none';
         parts_table.frame = 'void';
@@ -313,7 +421,7 @@ schematic = (function() {
         parts_table.cellSpacing = '0';
 
         // fill in parts_table
-        var parts_per_column = Math.floor(this.height / (part_h + 5));  // mysterious extra padding
+        var parts_per_column = this.parts_bin.length;
         for (var i = 0; i < parts_per_column; ++i) {
             tr = document.createElement('tr');
             parts_table.appendChild(tr);
@@ -324,27 +432,54 @@ schematic = (function() {
             }
         }
 
-        tr = document.createElement('tr');
-        table.appendChild(tr);
-        td = document.createElement('td');
-        tr.appendChild(td);
-        td.colSpan = 2;
-        td.appendChild(this.status_div);
+        // tr = document.createElement('tr');
+        // table.appendChild(tr);
+        // td = document.createElement('td');
+        // tr.appendChild(td);
+        // td.colSpan = 2;
+        // td.appendChild(this.status_div);
 
 
         // add to dom
         // avoid Chrome bug that changes to text cursor whenever
         // drag starts.  Just do this in schematic tool...
         var toplevel = document.createElement('div');
+        toplevel.classList.add("schematic-wrapper");
         toplevel.onselectstart = function(){ return false; };
         toplevel.appendChild(table);
         this.input.parentNode.insertBefore(toplevel,this.input.nextSibling);
-        
+
+        this.addEventHandlers();
     }
 
     part_w = 50;   // size of a parts bin compartment
     part_h = 50;
     status_height = 18;
+
+    Schematic.prototype.addEventHandlers = function () {
+
+        var _schematic = this;
+
+        // respond to requests to run a simulation
+        ipcRenderer.on("run-simulation", function (event, arg) {
+            _schematic.run_simulation();
+        });
+
+        ipcRenderer.on("playback", function(event, arg) {
+            _schematic.play();
+        });
+
+        // respond to requests to import a circuit
+        ipcRenderer.on("import-circuit", function (event, arg) {
+            _schematic.import();
+        });
+
+        // respond to requests to show help menu
+        ipcRenderer.on("export-circuit", function (event, arg) {
+            _schematic.export();
+        });
+
+    }
 
     Schematic.prototype.add_component = function(new_c) {
         this.components.push(new_c);
@@ -581,8 +716,8 @@ schematic = (function() {
                     var c = this.components[i];
                     c.remove();
                 }
-            } 
-            
+            }
+
 
             this.load_schematic(data);
             this.redraw_background();
@@ -606,7 +741,7 @@ schematic = (function() {
         }
 
         console.log(folder[0]);
-        window.projectFolder = folder[0];  
+        window.projectFolder = folder[0];
 
         this.import_circuit();
 
@@ -634,7 +769,7 @@ schematic = (function() {
             if(err){
                 console.log("error while creating the file " + err.message);
                 return;
-            }        
+            }
         });
 
 
@@ -646,12 +781,12 @@ schematic = (function() {
             if(err){
                 console.log("error while creating the file " + err.message);
                 return;
-            }        
+            }
         });
 
 
         const options_done = {
-            message: 'netlist file circuit.nls and import file circuit.txt created!'
+            message: 'Project saved successfully.'
         }
         dialog.showMessageBox(null, options_done);
 
@@ -663,7 +798,7 @@ schematic = (function() {
         const options_signal = {
             message: 'Please select a signal file'
         };
-            
+
         const options_netlist = {
             message: 'Use a sound file live audio?',
             type: 'question',
@@ -674,7 +809,7 @@ schematic = (function() {
         var circuit_file = window.projectFolder + '/circuit.nls';
 
         var choice = dialog.showMessageBox(null, options_netlist);
-        
+
         // choice == 0 means user uploads a sound
         if (choice == 0) {
             var sound_files = dialog.showOpenDialog();
@@ -688,21 +823,21 @@ schematic = (function() {
             console.log(sound_files[0]);
             var command = '../backend/csim -c ' + circuit_file + ' -s ' + sound_files[0] + ' -o ' + output_file + ' --plot';
 
+            shell_cmd.exec(command, (output) => {
+                console.log(output);
+            });
+
         // choice == 1 means user wants to play live audio
         } else {
-            var command = '../backend/csim -c ' + circuit_file + ' -o ' + output_file + ' --live_audio --plot';
+            window.command = '../backend/csim -c ' + circuit_file + ' -o ' + output_file + ' --live-input';
+            openLiveAudioModal();
         }
 
-        console.log(command);
 
-
-        shell_cmd.exec(command, (output) => {
-            console.log(output);
-        });
 
 /*
         // two ways of executing cmd line args
-        // first way spawns a child process; output visible in terminal 
+        // first way spawns a child process; output visible in terminal
         shell_cmd.exec('python test.py 1 2', (output) => {
             console.log(output);
         })
@@ -718,6 +853,7 @@ schematic = (function() {
     Schematic.prototype.play = function() {
 
         this.enable_tool('play', false);
+        alert("Running a playback");
 
         console.log(shell_cmd.sayHelloWorld());
         // console.log(this.play_file);
@@ -892,7 +1028,7 @@ schematic = (function() {
             this.draw_line(c,i,first_y,i,last_y,0.1);
         for (var i = first_y; i < last_y; i += this.grid)
             this.draw_line(c,first_x,i,last_x,i,0.1);
-        
+
 
         // unselected components
         for (var i = this.components.length - 1; i >= 0; --i) {
@@ -928,7 +1064,7 @@ schematic = (function() {
             var cplist = this.connection_points[location];
             cplist[0].draw(c,cplist.length);
         }
-    
+
         // draw new wire
         if (this.wire) {
             var r = this.wire;
@@ -949,7 +1085,7 @@ schematic = (function() {
             c.lineTo(r[0],r[1]);
             c.stroke();
         }
-        
+
         // finally overlay cursor
         if (this.drawCursor && this.draw_cursor) {
             //var x = this.cursor_x;
@@ -1147,6 +1283,12 @@ schematic = (function() {
 
         // determine where event happened in schematic coordinates
         sch.canvas.relMouseCoords(event);
+
+        var pos = getMousePos(sch.canvas, event);
+        sch.canvas.mouse_x = pos.x;
+        sch.canvas.mouse_y = pos.y;
+
+
         var x = sch.canvas.mouse_x/sch.scale + sch.origin_x;
         var y = sch.canvas.mouse_y/sch.scale + sch.origin_y;
         sch.cursor_x = Math.round(x/sch.grid) * sch.grid;
@@ -1187,13 +1329,27 @@ schematic = (function() {
         return false;
     }
 
+    function getMousePos(canvas, event) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top
+        };
+    }
+
     function schematic_mouse_move(event) {
         if (!event) event = window.event;
         var sch = (window.event) ? event.srcElement.schematic : event.target.schematic;
 
         sch.canvas.relMouseCoords(event);
+
+        var pos = getMousePos(sch.canvas, event);
+        sch.canvas.mouse_x = pos.x;
+        sch.canvas.mouse_y = pos.y;
+
         var x = sch.canvas.mouse_x/sch.scale + sch.origin_x;
         var y = sch.canvas.mouse_y/sch.scale + sch.origin_y;
+
         sch.cursor_x = Math.round(x/sch.grid) * sch.grid;
         sch.cursor_y = Math.round(y/sch.grid) * sch.grid;
 
@@ -1222,7 +1378,7 @@ schematic = (function() {
         sch.select_rect[3] = sch.canvas.mouse_y;
         //sch.message(sch.select_rect.toString());
         }
-    
+
         // just redraw dynamic components
         sch.redraw();
         //sch.message(sch.canvas.page_x + ',' + sch.canvas.page_y + ';' + sch.canvas.mouse_x + ',' + sch.canvas.mouse_y + ';' + sch.cursor_x + ',' + sch.cursor_y);
@@ -1262,7 +1418,7 @@ schematic = (function() {
             var s = [r[0]/sch.scale + sch.origin_x, r[1]/sch.scale + sch.origin_y,
                  r[2]/sch.scale + sch.origin_x, r[3]/sch.scale + sch.origin_y];
             canonicalize(s);
-        
+
             if (!event.shiftKey) sch.unselect_all();
 
             // select components that intersect selection rectangle
@@ -1283,6 +1439,12 @@ schematic = (function() {
 
         // determine where event happened in schematic coordinates
         sch.canvas.relMouseCoords(event);
+
+        var pos = getMousePos(sch.canvas, event);
+        sch.canvas.mouse_x = pos.x;
+        sch.canvas.mouse_y = pos.y;
+
+
         var x = sch.canvas.mouse_x/sch.scale + sch.origin_x;
         var y = sch.canvas.mouse_y/sch.scale + sch.origin_y;
         sch.cursor_x = Math.round(x/sch.grid) * sch.grid;
@@ -1303,13 +1465,13 @@ schematic = (function() {
     ////////////////////////////////////////////////////////////////////////////////
 
     Schematic.prototype.message = function(message) {
-        this.status.nodeValue = message;
+        // this.status.nodeValue = message;
     }
 
     Schematic.prototype.append_message = function(message) {
-        this.status.nodeValue += ' / '+message;
+        // this.status.nodeValue += ' / '+message;
     }
-    
+
     // set up a dialog with specified title, content and two buttons at
     // the bottom: OK and Cancel.  If Cancel is clicked, dialog goes away
     // and we're done.  If OK is clicked, dialog goes away and the
@@ -1500,7 +1662,7 @@ schematic = (function() {
         if (!event) event = window.event;
         var src = (window.event) ? event.srcElement : event.target;
         var win = src.parentNode;
-    
+
         // remember where mouse is so we can compute dx,dy during drag
         win.drag_x = event.pageX;
         win.drag_y = event.pageY;
@@ -1512,7 +1674,7 @@ schematic = (function() {
         if (!event) event = window.event;
         var src = (window.event) ? event.srcElement : event.target;
         var win = src.parentNode;
-    
+
         // show's over folks...
         win.drag_x = undefined;
         win.drag_y = undefined;
@@ -1522,7 +1684,7 @@ schematic = (function() {
     function window_mouse_move(event) {
         if (!event) event = window.event;
         var win = (window.event) ? event.srcElement.parentNode : event.target.parentNode;
-    
+
         if (win.drag_x) {
         var dx = event.pageX - win.drag_x;
         var dy = event.pageY - win.drag_y;
@@ -1532,7 +1694,7 @@ schematic = (function() {
         win.top += dy;
         win.style.left = win.left + 'px';
         win.style.top = win.top + 'px';
-    
+
         // update reference point
         win.drag_x += dx;
         win.drag_y += dy;
@@ -1830,7 +1992,7 @@ schematic = (function() {
         r[3] = temp;
         }
     }
-    
+
     function between(x,x1,x2) {
         return x1 <= x && x <= x2;
     }
@@ -1886,7 +2048,7 @@ schematic = (function() {
 
 
     Component.prototype.to_netlist = function(index) {
-        // create a json netlist with the desired specification 
+        // create a json netlist with the desired specification
 
         var json = ["# skip this"];
 
@@ -1935,7 +2097,7 @@ schematic = (function() {
         this.y += dy;
         this.update_coords();
     }
-    
+
     Component.prototype.move_end = function() {
         var dx = this.x - this.move_x;
         var dy = this.y - this.move_y;
@@ -2089,7 +2251,7 @@ schematic = (function() {
         // create an undoable edit record here
         }
     }
-    
+
     Component.prototype.select = function(x,y,shiftKey) {
         this.was_previously_selected = this.selected;
         if (this.near(x,y)) {
@@ -2234,7 +2396,7 @@ schematic = (function() {
         this.location = nx + ',' + ny;
 
         // add ourselves to the connection list for the new location
-        if (parent.sch) 
+        if (parent.sch)
         parent.sch.update_connection_point(this,old_location);
     }
 
@@ -2256,7 +2418,7 @@ schematic = (function() {
         var v = vmap[this.label];
         if (v != undefined) {
         var label = v.toFixed(2) + 'V';
-        
+
         // first draw some solid blocks in the background
         c.globalAlpha = 0.85;
         this.parent.draw_text(c,'\u2588\u2588\u2588',this.offset_x,this.offset_y,
@@ -2314,7 +2476,7 @@ schematic = (function() {
     Wire.prototype.toString = function() {
         return '<Wire ('+this.x+','+this.y+') ('+(this.x+this.dx)+','+(this.y+this.dy)+')>';
     }
-    
+
     // return connection point at other end of wire from specified cp
     Wire.prototype.other_end = function(cp) {
         if (cp == this.connections[0]) return this.connections[1];
@@ -2427,7 +2589,7 @@ schematic = (function() {
     Ground.prototype.toString = function() {
         return '<Ground ('+this.x+','+this.y+')>';
     }
-    
+
     Ground.prototype.draw = function(c) {
         Component.prototype.draw.call(this,c);   // give superclass a shot
         this.draw_line(c,0,0,0,8);
@@ -2476,7 +2638,7 @@ schematic = (function() {
     Label.prototype.toString = function() {
         return '<Label'+' ('+this.x+','+this.y+')>';
     }
-    
+
     Label.prototype.draw = function(c) {
         Component.prototype.draw.call(this,c);   // give superclass a shot
         this.draw_line(c,0,0,0,8);
@@ -2520,7 +2682,7 @@ schematic = (function() {
     Resistor.prototype.toString = function() {
         return '<Resistor '+this.properties['r']+' ('+this.x+','+this.y+')>';
     }
-    
+
     Resistor.prototype.draw = function(c) {
         Component.prototype.draw.call(this,c);   // give superclass a shot
         this.draw_line(c,0,0,0,12);
@@ -2576,7 +2738,7 @@ schematic = (function() {
     Capacitor.prototype.toString = function() {
         return '<Capacitor '+this.properties['r']+' ('+this.x+','+this.y+')>';
     }
-    
+
     Capacitor.prototype.draw = function(c) {
         Component.prototype.draw.call(this,c);   // give superclass a shot
         this.draw_line(c,0,0,0,22);
@@ -2631,7 +2793,7 @@ schematic = (function() {
     Inductor.prototype.toString = function() {
         return '<Inductor '+this.properties['l']+' ('+this.x+','+this.y+')>';
     }
-    
+
     Inductor.prototype.draw = function(c) {
         Component.prototype.draw.call(this,c);   // give superclass a shot
         this.draw_line(c,0,0,0,14);
@@ -2782,7 +2944,7 @@ schematic = (function() {
     Diode.prototype.toString = function() {
         return '<Diode ('+this.x+','+this.y+')>';
     }
-    
+
     Diode.prototype.draw = function(c) {
         Component.prototype.draw.call(this,c);   // give superclass a shot
         this.draw_line(c,0,0,0,16);
@@ -2841,7 +3003,7 @@ schematic = (function() {
     NFet.prototype.toString = function() {
         return '<NFet '+this.properties['W/L']+' ('+this.x+','+this.y+')>';
     }
-    
+
     NFet.prototype.draw = function(c) {
         Component.prototype.draw.call(this,c);   // give superclass a shot
         this.draw_line(c,0,0,0,16);
@@ -2903,7 +3065,7 @@ schematic = (function() {
     PFet.prototype.toString = function() {
         return '<PFet '+this.properties['W/L']+' ('+this.x+','+this.y+')>';
     }
-    
+
     PFet.prototype.draw = function(c) {
         Component.prototype.draw.call(this,c);   // give superclass a shot
         this.draw_line(c,0,0,0,16);
@@ -2963,7 +3125,7 @@ schematic = (function() {
     OpAmp.prototype.toString = function() {
         return '<OpAmp'+this.properties['A']+' ('+this.x+','+this.y+')>';
     }
-    
+
     OpAmp.prototype.draw = function(c) {
         Component.prototype.draw.call(this,c);   // give superclass a shot
         // triangle
@@ -2995,7 +3157,7 @@ schematic = (function() {
     //
     ////////////////////////////////////////////////////////////////////////////////
 
-    
+
     function Source(x,y,rotation,name,type,value) {
         Component.call(this,type,x,y,rotation);
         this.properties['name'] = name;
@@ -3020,7 +3182,7 @@ schematic = (function() {
     Source.prototype.toString = function() {
         return '<'+this.type+'source '+this.properties['params']+' ('+this.x+','+this.y+')>';
     }
-    
+
     Source.prototype.draw = function(c) {
         Component.prototype.draw.call(this,c);   // give superclass a shot
         this.draw_line(c,0,0,0,12);
@@ -3164,7 +3326,7 @@ schematic = (function() {
             var first = true;
             var value = '';
             for (var label in fields) {
-                if (label == 'name') 
+                if (label == 'name')
                 c.properties['name'] = fields['name'].value;
                 else if (label == 'value')  {
                 // if unknown source type
@@ -3218,7 +3380,7 @@ schematic = (function() {
         this.draw_text(c,'\u2588\u2588\u2588',-8,8,4,annotation_size,element_style);
         c.globalAlpha = 1.0;
 
-        // display the element current 
+        // display the element current
         var i = engineering_notation(v,2) + 'A';
         this.draw_text(c,i,-3,5,5,annotation_size,annotation_style);
         // draw arrow for current
@@ -3277,7 +3439,7 @@ schematic = (function() {
             json.push(this.connections[i].json());
 
         json.push(this.properties['value']);
-        
+
         return json;
     }
 

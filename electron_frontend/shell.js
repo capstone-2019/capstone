@@ -20,6 +20,8 @@ exports.exec = function(cmd, cb){
         }
         if (cb) cb(err);
     });
+
+    return p.pid;
 };
 
 // execute multiple commands in series
