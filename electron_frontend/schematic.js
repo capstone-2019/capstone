@@ -188,6 +188,7 @@ function manage_project() {
         shell_cmd.exec(command, (output) => {
             console.log(output);
         });
+        this.redraw_background();
 
     } else {
 
