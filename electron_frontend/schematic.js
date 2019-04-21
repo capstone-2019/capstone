@@ -260,9 +260,17 @@ schematic = (function() {
         'n': [NFet, 'NFet'],
         'fuzz': [Fuzz, 'Fuzz'],
         'reverb': [Reverb, 'Reverb'],
-        'delay': [Delay, 'Delay']
+        'delay': [Delay, 'Delay'],
+        'distortion': [Distortion, 'Distortion']
         // 'p': [PFet, 'PFet'],
     };
+
+    fb = new Set();
+    fb.add('fuzz');
+    fb.add('reverb');
+    fb.add('delay');
+    fb.add('distortion');
+    console.log(fb);
 
     // global clipboard
     if (typeof sch_clipboard == 'undefined')
@@ -1016,8 +1024,8 @@ schematic = (function() {
 
                 }
             }
-
-        } else if (component.type == 'fuzz' || component.type == 'delay' || component.type == 'reverb') {
+        } else if (fb.has(component.type)) {
+//        } else if (component.type == 'fuzz' || component.type == 'delay' || component.type == 'reverb') {
             // continue onwards: CPs 0 and 2 connected, CPs 1 and 3 are connected
 
             var id = -1; 
@@ -1125,7 +1133,9 @@ schematic = (function() {
         for (var i = 0; i < n; i++) {
             if (this.components[i].type == 'Vin') {
                 vin = this.components[i];
-            } else if (this.components[i].type != 'fuzz' && this.components[i].type != 'delay' && this.components[i].type != 'reverb') {
+
+            } else if (!fb.has(this.components[i].type)) {
+            // } else if (this.components[i].type != 'fuzz' && this.components[i].type != 'delay' && this.components[i].type != 'reverb') {
                 // skip 'Vin', and all functional blocks 
                 json.push(this.components[i].to_netlist(i));
             }
@@ -2078,13 +2088,23 @@ schematic = (function() {
 
     Part.prototype.draw_text = function(c,text,x,y,size) {
 
-        if (this.component.type == 'fuzz' || this.component.type == 'reverb' || this.component.type == 'delay') {
-
+        // if (this.component.type == 'fuzz' || this.component.type == 'reverb' || this.component.type == 'delay') {
+        if (fb.has(this.component.type)) {
             c.font = (size * 2) + 'pt sans-serif';
 
             var t = this.component.properties['effect'].slice(0, 3);
             var offset = 3;
 
+            if (this.component.type == 'distortion') {
+                // label is too long lol
+                offset = -1;
+            } else if (this.component.type == 'fuzz') {
+                offset = 4;
+            } else if (this.component.type == 'reverb') {
+                offset = 2;
+            } else if (this.component.type == 'delay') {
+                offset = 3;
+            }
             c.fillText(t,(x - this.origin_x) * this.scale - offset,(y - this.origin_y) * this.scale);
 
         } else if (this.component.type == 'Vin' || this.component.type == 'Vout') {
@@ -3370,14 +3390,15 @@ schematic = (function() {
         this.draw_line(c, 24, 16, 16, 16);
         this.draw_line(c, 24, 32, 16, 32);
 
-
         if (this.properties['effect']) {
             var offset = -6;
             if (this.properties['effect'] == 'delay') {
                 offset = -8;
             } else if (this.properties['effect'] == 'reverb') {
                 offset = -9;
-            };
+            } else if (this.properties['effect'] == 'distortion') {
+                offset = -13;
+            }
 
             this.draw_text(c,this.properties['effect'], offset,24,3,property_size);
         }
@@ -3457,6 +3478,26 @@ schematic = (function() {
     Reverb.prototype.draw = FunctionalBlock.prototype.draw;
     Reverb.prototype.clone = FunctionalBlock.prototype.clone;
     Reverb.prototype.to_netlist = FunctionalBlock.prototype.to_netlist;
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    //  Distortion 
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+
+
+    function Distortion(x, y, rotation, name) {
+        FunctionalBlock.call(this,x,y,rotation,name, 'distortion', 'distortion');  
+        this.type = 'distortion';
+    }
+    
+    Distortion.prototype = new Component();
+    Distortion.prototype.constructor = Distortion;
+    Distortion.prototype.toString = FunctionalBlock.prototype.toString;
+    Distortion.prototype.draw = FunctionalBlock.prototype.draw;
+    Distortion.prototype.clone = FunctionalBlock.prototype.clone;
+    Distortion.prototype.to_netlist = FunctionalBlock.prototype.to_netlist;
 
     ////////////////////////////////////////////////////////////////////////////////
     //
