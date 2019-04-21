@@ -27,5 +27,6 @@
 #include <components/voltagein.hpp>
 #include <components/voltageout.hpp>
 #include <components/diode.hpp>
+#include <components/inductor.hpp>
 
 #endif /* _COMPONENT_H_ */

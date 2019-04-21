@@ -47,6 +47,7 @@ public:
 	void register_diode(Diode *d);
 	void register_vin(VoltageIn *vin);
 	void register_vout(VoltageOut *vout);
+	void register_inductor(Inductor *ind);
 
 	void transient(std::vector<double>& timescale,
 		           std::vector<double>& input_signal,

@@ -301,6 +301,12 @@ Component *NetlistParser::component_from_tokens(vector<string> &tokens) {
         return cap;
     }
 
+    else if (tokens[0] == Inductor::IDENTIFIER) {
+        Inductor *ind = new Inductor(tokens);
+        c.register_inductor(ind);
+        return ind;
+    }
+
     /* input voltage */
     else if (tokens[0] == VoltageIn::IDENTIFIER) {
         VoltageIn *vin = new VoltageIn(tokens, am);

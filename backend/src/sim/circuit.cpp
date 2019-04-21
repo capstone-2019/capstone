@@ -60,6 +60,12 @@ void Circuit::register_resistor(Resistor *r) {
 	components.push_back(r);
 }
 
+void Circuit::register_inductor(Inductor *ind) {
+	register_unknowns(ind->unknowns());
+	ind->map_unknowns(unknowns);
+	components.push_back(ind);
+}
+
 /**
  * @brief Adds a new capacitor to the circuit.
  *
