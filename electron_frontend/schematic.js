@@ -249,7 +249,7 @@ schematic = (function() {
     parts_map = {
         'g': [Ground, 'Ground connection'],
         'v': [VSource, 'Voltage source'],
-        'i': [ISource, 'Current source'],
+        // 'i': [ISource, 'Current source'],
         'r': [Resistor, 'Resistor'],
         'c': [Capacitor, 'Capacitor'],
         'l': [Inductor, 'Inductor'],
@@ -257,11 +257,12 @@ schematic = (function() {
         'd': [Diode, 'Diode'],
         'Vin': [VIn, 'Voltage In'],
         'Vout': [VOut, 'Voltage Out'],
-        'n': [NFet, 'NFet'],
+        // 'n': [NFet, 'NFet'],
         'fuzz': [Fuzz, 'Fuzz'],
         'reverb': [Reverb, 'Reverb'],
         'delay': [Delay, 'Delay'],
-        'distortion': [Distortion, 'Distortion']
+        'distortion': [Distortion, 'Distortion'],
+        'amplify': [Amplify, 'Amplify']
         // 'p': [PFet, 'PFet'],
     };
 
@@ -270,6 +271,7 @@ schematic = (function() {
     fb.add('reverb');
     fb.add('delay');
     fb.add('distortion');
+    fb.add('amplify');
     console.log(fb);
 
     // global clipboard
@@ -2104,6 +2106,9 @@ schematic = (function() {
                 offset = 2;
             } else if (this.component.type == 'delay') {
                 offset = 3;
+            } else if (this.component.type == 'amplify') {
+                offset = 4;
+                c.font = (size * 2) - 1 + 'pt sans-serif';
             }
             c.fillText(t,(x - this.origin_x) * this.scale - offset,(y - this.origin_y) * this.scale);
 
@@ -3298,55 +3303,6 @@ schematic = (function() {
         return json;
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    //  Op Amp
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
-    function OpAmp(x,y,rotation,name,A) {
-        Component.call(this,'o',x,y,rotation);
-        this.properties['name'] = name;
-        this.properties['A'] = A ? A : '30000';
-        this.add_connection(0,0);   // +
-        this.add_connection(0,16);  // -
-        this.add_connection(48,8);  // output
-        this.add_connection(24,32);  // ground
-        this.bounding_box = [0,-8,48,32];
-        this.update_coords();
-    }
-    OpAmp.prototype = new Component();
-    OpAmp.prototype.constructor = OpAmp;
-
-    OpAmp.prototype.toString = function() {
-        return '<OpAmp'+this.properties['A']+' ('+this.x+','+this.y+')>';
-    }
-
-    OpAmp.prototype.draw = function(c) {
-        Component.prototype.draw.call(this,c);   // give superclass a shot
-        // triangle
-        this.draw_line(c,8,-8,8,24);
-        this.draw_line(c,8,-8,40,8);
-        this.draw_line(c,8,24,40,8);
-        // inputs and output
-        this.draw_line(c,0,0,8,0);
-        this.draw_line(c,0,16,8,16);
-        this.draw_text(c,'gnd',37,18,property_size);
-        this.draw_line(c,40,8,48,8);
-        this.draw_line(c,24,16,24,32);
-        // + and -
-        this.draw_line(c,10,0,16,0);
-        this.draw_line(c,13,-3,13,3);
-        this.draw_line(c,10,16,16,16);
-
-        if (this.properties['name'])
-        this.draw_text(c,this.properties['name'],32,16,0,property_size);
-    }
-
-    OpAmp.prototype.clone = function(x,y) {
-        return new OpAmp(x,y,this.rotation,this.properties['name'],this.properties['A']);
-    }
-
 
     ////////////////////////////////////////////////////////////////////////////////
     //
@@ -3392,12 +3348,16 @@ schematic = (function() {
 
         if (this.properties['effect']) {
             var offset = -6;
-            if (this.properties['effect'] == 'delay') {
+            if (this.properties['effect'] == 'fuzz') {
+                offset = -6;
+            } else if (this.properties['effect'] == 'delay') {
                 offset = -8;
             } else if (this.properties['effect'] == 'reverb') {
                 offset = -9;
             } else if (this.properties['effect'] == 'distortion') {
                 offset = -13;
+            } else if (this.properties['effect'] == 'amplify') {
+                offset = -10;
             }
 
             this.draw_text(c,this.properties['effect'], offset,24,3,property_size);
@@ -3498,6 +3458,27 @@ schematic = (function() {
     Distortion.prototype.draw = FunctionalBlock.prototype.draw;
     Distortion.prototype.clone = FunctionalBlock.prototype.clone;
     Distortion.prototype.to_netlist = FunctionalBlock.prototype.to_netlist;
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    //  Amplify 
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+
+
+    function Amplify(x, y, rotation, name) {
+        FunctionalBlock.call(this,x,y,rotation,name, 'amplify', 'amplify');  
+        this.type = 'amplify';
+    }
+    
+    Amplify.prototype = new Component();
+    Amplify.prototype.constructor = Amplify;
+    Amplify.prototype.toString = FunctionalBlock.prototype.toString;
+    Amplify.prototype.draw = FunctionalBlock.prototype.draw;
+    Amplify.prototype.clone = FunctionalBlock.prototype.clone;
+    Amplify.prototype.to_netlist = FunctionalBlock.prototype.to_netlist;
+
 
     ////////////////////////////////////////////////////////////////////////////////
     //
