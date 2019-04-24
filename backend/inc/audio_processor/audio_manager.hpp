@@ -25,8 +25,7 @@
 using std::vector;
 using std::string;
 
-#define HW_FRAMES_PER_BUFFER 512
-#define HW_SAMPLERATE 44100
+#define HW_FRAMES_PER_BUFFER (HW_SAMPLERATE == 44100 ? 512 : 32)
 #define NUM_CHANNELS 2
 
 class AudioManager

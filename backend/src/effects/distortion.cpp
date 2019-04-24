@@ -23,7 +23,7 @@
 
 float Distortion::apply(float val) {
 	float k, a;
-	float drive = 5000.f;
+	float drive = 7000.f;
 
 	a = sin(((drive + 1)/ 101) * (M_PI/2));
 	k = 2 * a / (1 - a);

@@ -15,6 +15,7 @@ Delay::Delay(int delay_len, int delay_iterations, float wet, float decay) {
 	buf_len = delay_len * delay_iterations * 2;
 	buf = new float[buf_len]();
 	index = 0;
+	decay = 1.f;
 }
 
 
@@ -32,7 +33,9 @@ float Delay::apply(float val) {
 		val_contrib /= decay;
 	}
 
-	index = (index + 1) % buf_len;
+	if (++index == buf_len) {
+		index = 0;
+	}
 
-	return val_contrib*wet + accum*(1.f - wet);
+	return val*wet + accum*(1.f - wet);
 }

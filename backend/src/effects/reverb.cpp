@@ -16,7 +16,7 @@ Reverb::Reverb() {
 		buf[i] = new float[buf_len]();
 	}
 
-	delay = 44100/4;
+	delay = HW_SAMPLERATE/4;
 	decay = 0.7f;
 
 	index = 0;

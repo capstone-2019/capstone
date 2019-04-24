@@ -10,7 +10,7 @@
 
 #include <effect.hpp>
 
-#define DEFAULT_DELAY_LEN (44100/4)
+#define DEFAULT_DELAY_LEN (HW_SAMPLERATE/4)
 #define DEFAULT_DELAY_ITERATIONS 6
 
 class Delay: public Effect {
