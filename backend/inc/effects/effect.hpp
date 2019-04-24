@@ -10,6 +10,11 @@
 #ifndef _EFFECT_H_
 #define _EFFECT_H_
 
+/* @bug this shouldn't be here, but temporary placement so a lot of
+ * other files can use it */
+#define HW_SAMPLERATE 44100
+
+
 class Effect 
 {
 public:

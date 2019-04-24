@@ -27,7 +27,7 @@ private:
 	float comb_filter(float val);
 	float all_pass_filter(float val);
 
-	int delay = 44100/4;
+	int delay = HW_SAMPLERATE/4;
 	float decay = 0.2f;
 
 	float **buf;

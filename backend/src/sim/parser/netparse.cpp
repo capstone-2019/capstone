@@ -30,6 +30,8 @@ using std::string;
 static const char *effect_idenfifiers[] = {
     "REVERB",
     "FUZZ",
+    "DELAY",
+    "DISTORTION",
     NULL,
 };
 
