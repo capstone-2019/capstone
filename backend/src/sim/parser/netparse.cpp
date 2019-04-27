@@ -32,6 +32,7 @@ static const char *effect_idenfifiers[] = {
     "FUZZ",
     "DELAY",
     "DISTORTION",
+    "AMPLIFY",
     NULL,
 };
 

@@ -128,6 +128,8 @@ float AudioManager::apply_effects(float val, vector<string> effects) {
 			val = delay.apply(val);
 		} else if (*it == "DISTORTION" ) {
 			val = distortion.apply(val);
+		} else if (*it == "AMPLIFY") {
+			val = amplify.apply(val);
 		} else {
 			sim_error("invalid pre-effect\n");
 		}

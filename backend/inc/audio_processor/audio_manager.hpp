@@ -19,6 +19,7 @@
 #include <distortion.hpp>
 #include <delay.hpp>
 #include <reverb.hpp>
+#include <amplify.hpp>
 
 #include "portaudio.h"
 
@@ -116,6 +117,7 @@ private:
 	Distortion distortion;
 	Delay delay;
 	Reverb reverb;
+	Amplify amplify;
 
 };
 
