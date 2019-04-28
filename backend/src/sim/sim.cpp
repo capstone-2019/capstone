@@ -55,7 +55,6 @@ static int plotter_fd[2];
 /** @brief Ratio to convert milliseconds to seconds */
 #define MS_TO_S 1000
 
-static FILE *_fp;
 volatile bool stop_simulation = false;
 
 /**
@@ -75,8 +74,6 @@ void sim_error(const char *fmt, ...) {
 }
 
 static void sigusr1_handler(int signo) {
-    fprintf(_fp, "Process received signal %d\n", signo);
-    fclose(_fp);
     stop_simulation = true;
 }
 
@@ -254,13 +251,8 @@ int main(int argc, char *argv[]) {
     vector<double> input_signal;
     vector<double> output_signal;
 
-    _fp = fopen("outfile.log", "w");
-
     /* install sigusr1 handler for comm. with frontend */
     signal(SIGUSR1, sigusr1_handler);
-    fprintf(_fp, "%s:%d Installed SIGUSR1 Handler\n", __FUNCTION__, __LINE__);
-    fprintf(_fp, "My PID is %d, sigusr1 is %d\n", getpid(), SIGUSR1);
-    fflush(_fp);
 
     parse_command_line(argc, argv, &params);
     NetlistParser parser(&params);
@@ -277,7 +269,6 @@ int main(int argc, char *argv[]) {
 
     /* run transient analysis */
     c.transient(timescale, input_signal, output_signal);
-    fprintf(_fp, "we here\n");
 
     /* get ending time and print timing summary */
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -303,8 +294,6 @@ int main(int argc, char *argv[]) {
         waitpid(plotter_pid, NULL, 0);
     }
 
-    while (1);
-    fclose(_fp);
 
     return 0;
 }
